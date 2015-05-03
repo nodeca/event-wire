@@ -1,0 +1,24 @@
+{
+  "name": "event-wire",
+  "version": "1.0.0",
+  "description": "Mediator with dynamic responsibility chains.",
+  "keywords": [
+    "event",
+    "events",
+    "mediator",
+    "broker",
+    "bus"
+  ],
+  "repository": "nodeca/event-wire",
+  "license": "MIT",
+  "scripts": {
+    "test": "make test"
+  },
+  "devDependencies": {
+    "coveralls": "~2.11.2",
+    "eslint": "0.20.0",
+    "eslint-plugin-nodeca": "^1.0.0",
+    "istanbul": "*",
+    "mocha": "*"
+  }
+}
