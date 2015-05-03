@@ -38,7 +38,7 @@ var wire = require('event-wire')();
 Create new `event-wire` instanse.
 
 
-### .emit(channels, obj [, callback])
+### .emit(channels [, obj, callback])
 
 Sends message with `obj` param into the `channels` (String|Array). Once all
 sync and ascync handlers finished, optional `callback(err)` (if specified) fired.

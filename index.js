@@ -220,7 +220,7 @@
 
 
   /**
-   *  Wire#emit(channels, params[, callback]) -> Void
+   *  Wire#emit(channels [, params, callback]) -> Void
    *  - channels (String|Array):
    *  - params (Mixed):
    *  - callback (Function):
