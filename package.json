@@ -14,6 +14,9 @@
   "scripts": {
     "test": "make test"
   },
+  "files": [
+    "index.js"
+  ],
   "dependencies": {
     "co": "^4.6.0"
   },
