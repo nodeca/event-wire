@@ -1,7 +1,7 @@
 2.0.2 / 2016-01-10
 ------------------
 
-- .emit() without callback now returns promiss.
+- .emit() without callback now returns `Promise`.
 
 
 2.0.1 / 2016-01-09
