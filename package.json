@@ -1,6 +1,6 @@
 {
   "name": "event-wire",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Mediator with dynamic responsibility chains.",
   "keywords": [
     "event",
