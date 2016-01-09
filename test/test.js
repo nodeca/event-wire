@@ -413,7 +413,7 @@ describe('Wire', function () {
 
       function defer() {
         return new Promise(function (resolve) {
-          setTimeout(function () { resolve(1); }, 100);
+          setTimeout(function () { resolve(1); }, 50);
         });
       }
 
@@ -426,6 +426,42 @@ describe('Wire', function () {
         assert.strictEqual(err, 'test');
         done();
       });
+    });
+
+
+    it('promise resolved', function (done) {
+      var w = ew();
+
+      function defer() {
+        return new Promise(function (resolve) {
+          setTimeout(function () { resolve(1); }, 50);
+        });
+      }
+
+      w.on('test', function* (d) {
+        yield defer();
+      });
+
+      w.emit('test')
+        .then(function () {
+          done();
+        })
+        .catch(done);
+    });
+
+
+    it('promise rejected', function (done) {
+      var w = ew();
+
+      w.on('test', function* (d) {
+        throw 'test';
+      });
+
+      w.emit('test')
+        .catch(function (err) {
+          assert.strictEqual(err, 'test');
+          done();
+        });
     });
 
   });

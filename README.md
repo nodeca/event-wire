@@ -43,6 +43,8 @@ Create new `event-wire` instanse.
 Sends message with `obj` param into the `channels` (String|Array). Once all
 sync and ascync handlers finished, optional `callback(err)` (if specified) fired.
 
+If callback not passed, emit returns `Promise`.
+
 
 ### .on(channels [, options], handler)
 

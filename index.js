@@ -70,6 +70,7 @@ function stableSort(collection) {
 
 function isGeneratorFunction(obj) {
   var constructor = obj.constructor;
+  /*istanbul ignore if*/
   if (!constructor) {
     return false;
   }
@@ -261,12 +262,33 @@ Wire.prototype.emit = function (channels, params, callback) {
     params = null;
   }
 
-  callback = callback || noop;
+  var p = null, _resolve, _reject;
+
+  // create promise to return if no callback passed
+  if (!callback) {
+    p = new Promise(function (resolve, reject) {
+      _resolve = resolve;
+      _reject  = reject;
+    });
+  }
+
+  function finish(err) {
+    // try to resolve promise if exists
+    if (p) {
+      if (!err) {
+        _resolve();
+      } else {
+        _reject(err);
+      }
+      p = _resolve = _reject = null;
+    }
+    (callback || noop)(err);
+  }
 
   // slightly optimize regular calls, with single channel
   if (!Array.isArray(channels)) {
-    emitSingle(self, channels, params, callback);
-    return;
+    emitSingle(self, channels, params, finish);
+    return p;
   }
 
   // Lot of channel - do chaining
@@ -274,7 +296,7 @@ Wire.prototype.emit = function (channels, params, callback) {
 
   function walk(err) {
     if (err || !_chs.length) {
-      callback(err);
+      finish(err);
       return;
     }
 
@@ -283,6 +305,8 @@ Wire.prototype.emit = function (channels, params, callback) {
   }
 
   walk();
+
+  return p;
 };
 
 
