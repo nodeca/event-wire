@@ -372,9 +372,7 @@ describe('Wire', function () {
 
       function defer(timeout) {
         return new Promise(function (resolve) {
-          setTimeout(function () {
-            resolve(i++);
-          }, timeout);
+          setTimeout(function () { resolve(i++); }, timeout);
         });
       }
 
@@ -392,6 +390,41 @@ describe('Wire', function () {
       w.emit('test', data, function (err) {
         assert.deepEqual(data, [ 1, 5, 6, 7 ]);
         done(err);
+      });
+    });
+
+
+    it('throw', function (done) {
+      var w = ew();
+
+      w.on('test', function* (d) {
+        throw 'test';
+      });
+
+      w.emit('test', function (err) {
+        assert.strictEqual(err, 'test');
+        done();
+      });
+    });
+
+
+    it('throw after yield', function (done) {
+      var w = ew();
+
+      function defer() {
+        return new Promise(function (resolve) {
+          setTimeout(function () { resolve(1); }, 100);
+        });
+      }
+
+      w.on('test', function* (d) {
+        yield defer();
+        throw 'test';
+      });
+
+      w.emit('test', function (err) {
+        assert.strictEqual(err, 'test');
+        done();
       });
     });
 

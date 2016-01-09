@@ -219,13 +219,13 @@ function emitSingle(_self, channel, params, callback) {
     // if already exists
     if (wh.gen) {
       co(fn, params)
-        .catch(function (e) {
-          // Don't try to intercept exceptions from next handlers
-          process.nextTick(walk.bind(null, err || e));
-        })
         .then(function () {
           // Don't try to intercept exceptions from next handlers
           process.nextTick(walk.bind(null, err));
+        })
+        .catch(function (e) {
+          // Don't try to intercept exceptions from next handlers
+          process.nextTick(walk.bind(null, err || e));
         });
     } else if (!wh.sync) {
       fn(params, function (e) {
