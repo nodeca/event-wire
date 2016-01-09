@@ -20,7 +20,7 @@ rules:
   guard-for-in:         2
   handle-callback-err:  2
   max-depth:            [ 1, 6 ]
-  max-nested-callbacks: [ 1, 4 ]
+  max-nested-callbacks: [ 1, 7 ]
   # string can exceed 80 chars, but should not overflow github website :)
   max-len:              [ 2, 120, 1000 ]
   new-cap:              2
@@ -82,7 +82,7 @@ rules:
   no-return-assign:     2
   no-script-url:        2
   no-sequences:         2
-  no-shadow:            2
+  no-shadow:            0
   no-shadow-restricted-names: 2
   no-space-before-semi: 2
   no-sparse-arrays:     2

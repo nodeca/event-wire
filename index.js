@@ -231,6 +231,11 @@
   Wire.prototype.emit = function (channels, params, callback) {
     var self = this, _chs, chan;
 
+    if (!callback && isFunction(params)) {
+      callback = params;
+      params = null;
+    }
+
     callback = callback || noop;
 
     // slightly optimize regular calls, with single channel

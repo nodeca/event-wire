@@ -16,7 +16,7 @@ describe('Wire', function () {
   });
 
 
-  it('.on', function () {
+  it('.on', function (done) {
     var w = ew(),
         data = [];
 
@@ -24,9 +24,11 @@ describe('Wire', function () {
     w.on([ 'test' ], function h2() { data.push(2); });
     w.on('test', function h3() { data.push(3); });
 
-    w.emit('test');
-
-    assert.deepEqual(data, [ 1, 2, 3 ]);
+    w.emit('test', function (err) {
+      assert.ifError(err);
+      assert.deepEqual(data, [ 1, 2, 3 ]);
+      done();
+    });
   });
 
 
@@ -56,7 +58,7 @@ describe('Wire', function () {
   });
 
 
-  it('.after', function () {
+  it('.after', function (done) {
     var w = ew(),
         data = [];
 
@@ -69,13 +71,15 @@ describe('Wire', function () {
 
     w.after('test', null, function h5() { data.push(5); });
 
-    w.emit('test');
-
-    assert.deepEqual(data, [ 4, 2, 3, 5, 1 ]);
+    w.emit('test', function (err) {
+      assert.ifError(err);
+      assert.deepEqual(data, [ 4, 2, 3, 5, 1 ]);
+      done();
+    });
   });
 
 
-  it('.before', function () {
+  it('.before', function (done) {
     var w = ew(),
         data = [];
 
@@ -88,27 +92,33 @@ describe('Wire', function () {
     w.on('test', { priority: -11 }, function h4() { data.push(4); });
     w.on('test', { priority: -9 }, function h5() { data.push(5); });
 
-    w.emit('test');
-
-    assert.deepEqual(data, [ 4, 1, 3, 5, 2 ]);
+    w.emit('test', function (err) {
+      assert.ifError(err);
+      assert.deepEqual(data, [ 4, 1, 3, 5, 2 ]);
+      done();
+    });
   });
 
 
-  it('.once', function () {
+  it('.once', function (done) {
     var w = ew(),
         data = [];
 
     w.once('test.*', function h1() { data.push(1); });
     w.once('test.1', null, function h2() { data.push(2); });
 
-    w.emit('test.1');
-    w.emit('test.1');
-
-    assert.deepEqual(data, [ 1, 2 ]);
+    w.emit('test.1', function (e) {
+      assert.ifError(e);
+      w.emit('test.1', function (err) {
+        assert.ifError(err);
+        assert.deepEqual(data, [ 1, 2 ]);
+        done();
+      });
+    });
   });
 
 
-  it('.skip', function () {
+  it('.skip', function (done) {
     var w = ew(), data;
 
     w.on('foo.*', function foo() { data.push(1); });
@@ -116,25 +126,32 @@ describe('Wire', function () {
     w.on('foo.bar', function foobar2() { data.push(3); });
 
     data = [];
-    w.emit('foo.bar');
-    assert.deepEqual(data, [ 1, 2, 3 ]);
+    w.emit('foo.bar', function (err) {
+      assert.ifError(err);
+      assert.deepEqual(data, [ 1, 2, 3 ]);
 
-    w.skip('foo.bar', 'foobar');
+      w.skip('foo.bar', 'foobar');
 
-    data = [];
-    w.emit('foo.bar');
-    assert.deepEqual(data, [ 1, 3 ]);
+      data = [];
+      w.emit('foo.bar', function (err) {
+        assert.ifError(err);
+        assert.deepEqual(data, [ 1, 3 ]);
 
-    // Second attempt doesn't change anything
-    w.skip('foo.bar', 'foobar');
+        // Second attempt doesn't change anything
+        w.skip('foo.bar', 'foobar');
 
-    data = [];
-    w.emit('foo.bar');
-    assert.deepEqual(data, [ 1, 3 ]);
+        data = [];
+        w.emit('foo.bar', function (err) {
+          assert.ifError(err);
+          assert.deepEqual(data, [ 1, 3 ]);
+          done();
+        });
+      });
+    });
   });
 
 
-  it('.skip + wildard', function () {
+  it('.skip + wildard', function (done) {
     var w = ew(),
         data;
 
@@ -145,26 +162,38 @@ describe('Wire', function () {
 
 
     data = [];
-    w.emit('foo.bar');
-    assert.deepEqual(data, [ 1, 2, 3 ]);
+    w.emit('foo.bar', function (err) {
+      assert.ifError(err);
+      assert.deepEqual(data, [ 1, 2, 3 ]);
 
-    data = [];
-    w.emit('foo.baz');
-    assert.deepEqual(data, [ 1 ]);
+      data = [];
+      w.emit('foo.baz', function (err) {
+        assert.ifError(err);
+        assert.deepEqual(data, [ 1 ]);
 
-    w.skip('foo*', [ 'foo' ]);
+        w.skip('foo*', [ 'foo' ]);
 
-    data = [];
-    w.emit('foo.bar');
-    assert.deepEqual(data, [ 2, 3 ]);
+        data = [];
+        w.emit('foo.bar', function (err) {
+          assert.ifError(err);
+          assert.deepEqual(data, [ 2, 3 ]);
 
-    data = [];
-    w.emit('foo.baz');
-    assert.deepEqual(data, []);
+          data = [];
+          w.emit('foo.baz', function (err) {
+            assert.ifError(err);
+            assert.deepEqual(data, []);
 
-    data = [];
-    w.emit('baz');
-    assert.deepEqual(data, [ 4 ]);
+            data = [];
+            w.emit('baz', function (err) {
+              assert.ifError(err);
+              assert.deepEqual(data, [ 4 ]);
+
+              done();
+            });
+          });
+        });
+      });
+    });
   });
 
 
@@ -195,7 +224,7 @@ describe('Wire', function () {
   });
 
 
-  it('emit multiple', function () {
+  it('emit multiple', function (done) {
     var w = ew(),
         data = [];
 
@@ -203,9 +232,11 @@ describe('Wire', function () {
     w.on('test.2', function h2() { data.push(2); });
     w.on('test.*', function hw() { data.push(3); });
 
-    w.emit([ 'test.1', 'test.2', 'test.3' ]);
-
-    assert.deepEqual(data, [ 1, 3, 2, 3, 3 ]);
+    w.emit([ 'test.1', 'test.2', 'test.3' ], function (err) {
+      assert.ifError(err);
+      assert.deepEqual(data, [ 1, 3, 2, 3, 3 ]);
+      done();
+    });
   });
 
 
@@ -218,6 +249,7 @@ describe('Wire', function () {
     });
 
     w.emit('test', data, function(err) {
+      assert.ifError(err);
       assert.deepEqual(data, { foo: 5 });
       done(err);
     });
@@ -236,8 +268,7 @@ describe('Wire', function () {
       obj.foo = 5;
     });
 
-    w.emit('test', data, function(err) {
-      assert.ok(err);
+    w.emit('test', data, function () {
       assert.deepEqual(data, {});
       done();
     });
@@ -256,8 +287,7 @@ describe('Wire', function () {
       obj.foo = 5;
     });
 
-    w.emit('test', data, function(err) {
-      assert.ok(err);
+    w.emit('test', data, function() {
       assert.deepEqual(data, { foo: 5 });
       done();
     });
@@ -292,8 +322,7 @@ describe('Wire', function () {
       obj.foo = 5;
     });
 
-    w.emit('test', data, function(err) {
-      assert.ok(err);
+    w.emit('test', data, function() {
       assert.deepEqual(data, {});
       done();
     });
