@@ -48,24 +48,31 @@ sync and ascync handlers finished, optional `callback(err)` (if specified) fired
 
 Registers `handler` to be executed upon messages in the a single channel
 or a sequence of channels stored in `channels` parameter. Handler can be
-either sync function:
+either sync, async or generator function:
 
 ```js
 wire.on('foobar', function () {
   // do stuff here
+  return new Error('test'); // You can return error
 });
 
 wire.on('foobar', function (obj) {
   // do stuff here
 });
-```
 
-Or it might be an async function with `callback(err)` second argument:
+wire.on('foobar', function (callback) {
+  // do stuff here
+  callback();
+});
 
-```js
 wire.on('foobar', function (obj, callback) {
   // do stuff here
-  callback(null);
+  callback();
+});
+
+wire.on('foobar', function* (obj) {
+  // do stuff here
+  yield ...
 });
 ```
 
