@@ -14,6 +14,10 @@ function _class(obj) { return Object.prototype.toString.call(obj); }
 function isString(obj) { return _class(obj) === '[object String]'; }
 function isFunction(obj) { return _class(obj) === '[object Function]'; }
 
+
+var co = require('co');
+
+
 //
 // Simplified stable sort implementation from Lo-Dash (http://lodash.com/)
 //
@@ -64,6 +68,19 @@ function stableSort(collection) {
 }
 
 
+function isGeneratorFunction(obj) {
+  var constructor = obj.constructor;
+  if (!constructor) {
+    return false;
+  }
+  if (constructor.name === 'GeneratorFunction' ||
+      constructor.displayName === 'GeneratorFunction') {
+    return true;
+  }
+  return false;
+}
+
+
 //////////////////////////////////////////////////////////////////////////////
 
 
@@ -78,6 +95,7 @@ function WireHandler(channel, options, func) {
   this.channel   = channel;
   this.func      = func;
   this.name      = func.name || options.name || '<anonymous>';
+  this.gen       = isGeneratorFunction(func);
   this.sync      = func.length === 0 || func.length === 1;
   this.once      = Boolean(options.once);
   this.ensure    = Boolean(options.ensure);
@@ -199,7 +217,17 @@ function emitSingle(_self, channel, params, callback) {
 
     // Call handler, but protect err from override,
     // if already exists
-    if (!wh.sync) {
+    if (wh.gen) {
+      co(fn, params)
+        .catch(function (e) {
+          // Don't try to intercept exceptions from next handlers
+          process.nextTick(walk.bind(null, err || e));
+        })
+        .then(function () {
+          // Don't try to intercept exceptions from next handlers
+          process.nextTick(walk.bind(null, err));
+        });
+    } else if (!wh.sync) {
       fn(params, function (e) {
         walk(err || e);
       });

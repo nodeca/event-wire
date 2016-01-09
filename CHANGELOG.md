@@ -1,3 +1,10 @@
+2.0.0 / 2016-01-09
+------------------
+
+- Added generators support.
+- Removed custom module.
+
+
 1.0.1 / 2016-01-09
 ------------------
 

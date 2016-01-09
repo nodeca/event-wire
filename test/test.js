@@ -362,4 +362,38 @@ describe('Wire', function () {
     assert.throws(function () { w.skip('*test'); });
   });
 
+
+  describe('Generators', function () {
+
+    it('.on', function (done) {
+      var w = ew(),
+          data = [],
+          i = 5;
+
+      function defer(timeout) {
+        return new Promise(function (resolve) {
+          setTimeout(function () {
+            resolve(i++);
+          }, timeout);
+        });
+      }
+
+      w.on('test', function h1(d, next) {
+        d.push(1);
+        next();
+      });
+
+      w.on('test', function* h2(d) {
+        d.push(yield defer(50));
+        d.push(yield defer(10));
+        d.push(yield defer(5));
+      });
+
+      w.emit('test', data, function (err) {
+        assert.deepEqual(data, [ 1, 5, 6, 7 ]);
+        done(err);
+      });
+    });
+
+  });
 });
