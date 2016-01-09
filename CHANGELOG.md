@@ -2,7 +2,7 @@
 ------------------
 
 - Added generators support.
-- Removed custom module.
+- Removed custom module wrapper.
 
 
 1.0.1 / 2016-01-09
