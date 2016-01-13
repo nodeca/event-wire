@@ -196,10 +196,6 @@ function emitSingle(_self, channel, params, callback) {
   var stash = _self.getHandlers(channel).slice(),
       wh, fn, _err;
 
-  if (channel.indexOf('*') >= 0) {
-    throw new Error("Bad channel name '" + channel + "'. Wildard `*` not allowed in emitter");
-  }
-
   // iterates through handlers of stash
   function walk(err) {
 
@@ -285,51 +281,50 @@ Wire.prototype.emit = function (channels, params, callback) {
     params = null;
   }
 
-  var p = null, _resolve, _reject;
+  return new Promise(function (resolve, reject) {
 
-  // create promise to return if no callback passed
-  if (!callback) {
-    p = new Promise(function (resolve, reject) {
-      _resolve = resolve;
-      _reject  = reject;
-    });
-  }
-
-  function finish(err) {
-    // try to resolve promise if exists
-    if (p) {
+    function finish(err) {
       if (!err) {
-        _resolve();
+        resolve();
       } else {
-        _reject(err);
+        reject(err);
       }
-      p = _resolve = _reject = null;
+
+      if (callback) {
+        callback(err);
+      }
     }
-    (callback || noop)(err);
-  }
 
-  // slightly optimize regular calls, with single channel
-  if (!Array.isArray(channels)) {
-    emitSingle(self, channels, params, finish);
-    return p;
-  }
+    var _c = Array.isArray(channels) ? channels : [ channels ];
 
-  // Lot of channel - do chaining
-  _chs = channels.slice();
+    for (var i = 0; i < _c.length; i++) {
+      if (_c[i].indexOf('*') >= 0) {
+        finish(new Error("Bad channel name '" + _c[i] + "'. Wildard `*` not allowed in emitter"));
+        return;
+      }
+    }
 
-  function walk(err) {
-    if (err || !_chs.length) {
-      finish(err);
+    // slightly optimize regular calls, with single channel
+    if (!Array.isArray(channels)) {
+      emitSingle(self, channels, params, finish);
       return;
     }
 
-    chan = _chs.shift();
-    emitSingle(self, chan, params, walk);
-  }
+    // Lot of channel - do chaining
+    _chs = channels.slice();
 
-  walk();
+    function walk(err) {
+      if (err || !_chs.length) {
+        finish(err);
+        return;
+      }
 
-  return p;
+      chan = _chs.shift();
+      emitSingle(self, chan, params, walk);
+    }
+
+    walk();
+  });
 };
 
 

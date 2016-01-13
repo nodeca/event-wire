@@ -329,37 +329,62 @@ describe('Wire', function () {
   });
 
 
-  it('errors', function () {
-    var w = ew();
+  describe('errors', function () {
 
-    assert.throws(function () {
-      w.after('test', { priority: -5 }, function () {});
+    it('bad priority', function () {
+      var w = ew();
+
+      assert.throws(function () {
+        w.after('test', { priority: -5 }, function () {});
+      });
+
+      assert.throws(function () {
+        w.before('test', { priority: 5 }, function () {});
+      });
     });
 
-    assert.throws(function () {
-      w.before('test', { priority: 5 }, function () {});
+
+    it('bad params count', function () {
+      var w = ew();
+
+      assert.throws(function () { w.on('test'); });
+
+      assert.throws(function () {
+        /*eslint-disable no-unused-vars*/
+        w.on('test', function (a, b, c, d) {});
+      });
     });
 
-    assert.throws(function () { w.on('test'); });
 
-    assert.throws(function () {
-      /*eslint-disable no-unused-vars*/
-      w.on('test', function (a, b, c, d) {});
+    it('bad channel name (configure)', function () {
+      var w = ew();
+
+      assert.throws(function () {
+        w.on('', function () {});
+      });
+
+      assert.throws(function () {
+        w.on('*test', function () {});
+      });
+
+      assert.throws(function () {
+        w.skip('test');
+      });
+
+      assert.throws(function () {
+        w.skip('*test');
+      });
     });
 
-    assert.throws(function () {
-      w.on('', function () {});
+
+    it('bad channel name (emit)', function (done) {
+      var w = ew();
+      // Do we really need it?
+      w.emit('test*', function (err) {
+        done(!err);
+      });
     });
 
-    assert.throws(function () {
-      w.on('*test', function () {});
-    });
-
-    assert.throws(function () { w.emit('test*'); });
-
-    assert.throws(function () { w.skip('test'); });
-
-    assert.throws(function () { w.skip('*test'); });
   });
 
 
