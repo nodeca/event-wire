@@ -1,7 +1,14 @@
+2.0.3 / 2016-01-13
+------------------
+
+- Make sure `.emit()` always returns promise.
+- Added `.hook()` method to inject monitoring functions.
+
+
 2.0.2 / 2016-01-10
 ------------------
 
-- .emit() without callback now returns `Promise`.
+- `.emit()` without callback now returns `Promise`.
 
 
 2.0.1 / 2016-01-09
