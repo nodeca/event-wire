@@ -463,6 +463,102 @@ describe('Wire', function () {
           done();
         });
     });
+  });
 
+
+  describe('.hook', function () {
+
+    it('eachBefore and eachAfter with async', function () {
+      var w = ew();
+
+      var beforeFns = [], afterFns = [];
+
+      w.hook('eachBefore', function (fn) {
+        beforeFns.push(fn.name);
+      });
+
+      w.hook('eachAfter', function (fn) {
+        afterFns.push(fn.name);
+      });
+
+      w.before('test', function beforeFn(__, callback) {
+        callback();
+      });
+      w.on('test', function onFn(__, callback) {
+        callback();
+      });
+      w.after('test', function afterFn(__, callback) {
+        callback();
+      });
+
+      w.emit('test', function () {
+        assert.deepEqual(beforeFns, [ 'beforeFn', 'onFn', 'afterFn' ]);
+        assert.deepEqual(afterFns, [ 'beforeFn', 'onFn', 'afterFn' ]);
+      });
+    });
+
+
+    it('eachBefore and eachAfter with sync', function () {
+      var w = ew();
+
+      var beforeFns = [], afterFns = [];
+
+      w.hook('eachBefore', function (fn) {
+        beforeFns.push(fn.name);
+      });
+
+      w.hook('eachAfter', function (fn) {
+        afterFns.push(fn.name);
+      });
+
+      w.before('test', function beforeFn(__) {
+      });
+      w.on('test', function onFn(__) {
+      });
+      w.after('test', function afterFn(__) {
+      });
+
+      w.emit('test', function () {
+        assert.deepEqual(beforeFns, [ 'beforeFn', 'onFn', 'afterFn' ]);
+        assert.deepEqual(afterFns, [ 'beforeFn', 'onFn', 'afterFn' ]);
+      });
+    });
+
+
+    it('eachBefore and eachAfter with promise', function (done) {
+      var w = ew();
+
+      function defer() {
+        return new Promise(function (resolve) {
+          setTimeout(function () { resolve(1); }, 5);
+        });
+      }
+
+      var beforeFns = [], afterFns = [];
+
+      w.hook('eachBefore', function (fn) {
+        beforeFns.push(fn.name);
+      });
+
+      w.hook('eachAfter', function (fn) {
+        afterFns.push(fn.name);
+      });
+
+      w.before('test', function* beforeFn(__) {
+        yield defer();
+      });
+      w.on('test', function* onFn(__) {
+        yield defer();
+      });
+      w.after('test', function* afterFn(__) {
+        yield defer();
+      });
+
+      w.emit('test', function () {
+        assert.deepEqual(beforeFns, [ 'beforeFn', 'onFn', 'afterFn' ]);
+        assert.deepEqual(afterFns, [ 'beforeFn', 'onFn', 'afterFn' ]);
+        done();
+      });
+    });
   });
 });

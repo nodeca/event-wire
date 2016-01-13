@@ -131,6 +131,14 @@ you can write dumper to check that all expected channels have required
 handlers. Or to track number of calls.
 
 
+### .hook(eventName, fn)
+
+`eventName`:
+
+- `eachBefore` (handler, params) will be called before each handler
+- `eachAfter` (handler, params) will be called after each handler
+
+
 ## License
 
 [MIT](https://github.com/nodeca/event-wire/blob/master/LICENSE)

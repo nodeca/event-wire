@@ -117,11 +117,20 @@ function WireHandler(channel, options, func) {
 function Wire() {
   if (!(this instanceof Wire)) { return new Wire(); }
 
+  this.__hooks__          = {};
   this.__handlers__       = [];
   this.__sortedCache__    = [];
   this.__knownChannels__  = {};
   this.__skips__          = {};
 }
+
+
+// Add hook.
+//
+Wire.prototype.hook = function (eventName, handler) {
+  this.__hooks__[eventName] = this.__hooks__[eventName] || [];
+  this.__hooks__[eventName].push(handler);
+};
 
 
 // Returns true if `handlerName` must be skipped on `channelName`.
@@ -216,24 +225,38 @@ function emitSingle(_self, channel, params, callback) {
       _self.off(wh.channel, fn);
     }
 
+    (_self.__hooks__.eachBefore || []).forEach(function (hook) {
+      hook(fn, params);
+    });
+
+    function eachAfterHook() {
+      (_self.__hooks__.eachAfter || []).forEach(function (hook) {
+        hook(fn, params);
+      });
+    }
+
     // Call handler, but protect err from override,
     // if already exists
     if (wh.gen) {
       co(fn, params)
         .then(function () {
+          eachAfterHook();
           // Don't try to intercept exceptions from next handlers
           process.nextTick(walk.bind(null, err));
         })
         .catch(function (e) {
+          eachAfterHook();
           // Don't try to intercept exceptions from next handlers
           process.nextTick(walk.bind(null, err || e));
         });
     } else if (!wh.sync) {
       fn(params, function (e) {
+        eachAfterHook();
         walk(err || e);
       });
     } else {
       _err = fn(params);
+      eachAfterHook();
       walk(err || _err);
     }
 
