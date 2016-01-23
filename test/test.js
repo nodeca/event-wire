@@ -4,7 +4,7 @@
 
 
 var assert = require('assert');
-var ew = require('../');
+var ew     = require('../');
 
 
 describe('Wire', function () {
@@ -256,7 +256,7 @@ describe('Wire', function () {
   });
 
 
-  it('sync + err', function (done) {
+  it('sync + return err', function (done) {
     var w = ew(),
         data = {};
 
@@ -268,8 +268,53 @@ describe('Wire', function () {
       obj.foo = 5;
     });
 
-    w.emit('test', data, function () {
+    w.emit('test', data, function (err) {
+      assert.equal(err.message, 'test');
       assert.deepEqual(data, {});
+      done();
+    });
+  });
+
+
+  it('sync + throw err', function (done) {
+    var w = ew(),
+        data = {};
+
+    w.on('test', function h1() {
+      throw new Error('test');
+    });
+
+    w.on('test', function h2(obj) {
+      obj.foo = 5;
+    });
+
+    w.emit('test', data, function (err) {
+      assert.equal(err.message, 'test');
+      assert.deepEqual(data, {});
+      done();
+    });
+  });
+
+
+  it('sync + promise', function (done) {
+    var w = ew(),
+        data = [];
+
+    w.on('test', function h1() {
+      return new Promise(function (resolve) {
+        setTimeout(function () {
+          data.push(1);
+          resolve();
+        }, 50);
+      });
+    });
+
+    w.on('test', function h2() {
+      data.push(5);
+    });
+
+    w.emit('test', function () {
+      assert.deepEqual(data, [ 1, 5 ]);
       done();
     });
   });
@@ -283,12 +328,27 @@ describe('Wire', function () {
       return new Error('test');
     });
 
+    // coverage
+    w.on('test', function* hg(obj) {
+      obj.bar = 'failed';
+    });
+    w.on('test', function hcb(obj, cb) {
+      obj.bar = 'failed';
+      cb();
+    });
+
     w.on('test', { ensure: true }, function h2(obj) {
       obj.foo = 5;
     });
+    // coverage - should not override prev error
+    w.on('test', { ensure: true }, function h3(obj) {
+      obj.zab = 6;
+      throw new Error('overriden');
+    });
 
-    w.emit('test', data, function() {
-      assert.deepEqual(data, { foo: 5 });
+    w.emit('test', data, function(err) {
+      assert.equal(err.message, 'test');
+      assert.deepEqual(data, { foo: 5, zab: 6 });
       done();
     });
   });

@@ -219,8 +219,6 @@ Wire.prototype.__emitOne = function (ch, params) {
   }
 
   this.__getHandlers(ch).slice().forEach(function (wh) {
-    if (errored && !wh.ensure) { return; }
-
     var fn = wh.func;
 
     if (wh.once) { self.off(wh.channel, fn); }
@@ -246,9 +244,7 @@ Wire.prototype.__emitOne = function (ch, params) {
         var val = fn(params);
 
         if (val) {
-          if (isPromise(val)) {
-            return val;
-          }
+          if (isPromise(val)) { return val; }
           throw val;
         }
       });
