@@ -20,8 +20,8 @@ function isFunction(obj) { return _class(obj) === '[object Function]'; }
 //
 
 function compareAscending(a, b) {
-  var ai = a.index,
-      bi = b.index;
+  var ai = a.idx,
+      bi = b.idx;
 
   a = a.criteria;
   b = b.criteria;
@@ -42,23 +42,23 @@ function compareAscending(a, b) {
   return ai < bi ? -1 : 1;
 }
 
-function stableSort(collection) {
-  var index,
-      length = collection.length,
-      result = new Array(length);
+function stableSort(arr) {
+  var idx,
+      len    = arr.length,
+      result = new Array(len);
 
-  for (index = 0; index < length; index += 1) {
-    result[index] = {
-      criteria: collection[index].priority,
-      index:    index,
-      value:    collection[index]
+  for (idx = 0; idx < len; idx += 1) {
+    result[idx] = {
+      criteria: arr[idx].priority,
+      idx:      idx,
+      val:      arr[idx]
     };
   }
 
   result.sort(compareAscending);
 
-  for (index = 0; index < length; index += 1) {
-    result[index] = result[index].value;
+  for (idx = 0; idx < len; idx += 1) {
+    result[idx] = result[idx].val;
   }
 
   return result;
@@ -86,7 +86,7 @@ function isGeneratorFunction(obj) {
 function WireHandler(channel, options, func) {
   if (channel.indexOf('*') !== -1 &&
       channel.indexOf('*') !== channel.length - 1) {
-    throw new Error('Bad channel name \'' + channel + '\'. Broadcast symbol (*) must ' +
+    throw new Error("Bad channel name '" + channel + "'. Broadcast symbol (*) must " +
                     'be the last character.');
   }
 
@@ -118,55 +118,46 @@ function Wire(options) {
 
   this.__co = opts.co || require('co');
 
-  this.__hooks__          = {};
-  this.__handlers__       = [];
-  this.__sortedCache__    = [];
-  this.__knownChannels__  = {};
-  this.__skips__          = {};
+  this.__hooks          = {};
+  this.__handlers       = [];
+  this.__sortedCache    = [];
+  this.__knownChannels  = {};
+  this.__skips          = {};
 }
 
 
 // Add hook.
 //
 Wire.prototype.hook = function (eventName, handler) {
-  this.__hooks__[eventName] = this.__hooks__[eventName] || [];
-  this.__hooks__[eventName].push(handler);
+  this.__hooks[eventName] = this.__hooks[eventName] || [];
+  this.__hooks[eventName].push(handler);
 };
 
 
 // Returns true if `handlerName` must be skipped on `channelName`.
 //
-Wire.prototype.checkSkip = function (handlerName, channelName) {
-  var index, length, skip, skipBroadcast;
-  var skipList = this.__skips__[handlerName] || [];
+Wire.prototype.__checkSkip = function (handlerName, channelName) {
 
-  for (index = 0, length = skipList.length; index < length; index += 1) {
-    skip = skipList[index];
-    skipBroadcast = (skip.charAt(skip.length - 1) === '*');
+  return !!(this.__skips[handlerName] || []).some(function (skip) {
+    var wcard = skip.charAt(skip.length - 1) === '*';
 
-    if (!skipBroadcast && (channelName === skip)) {
-      return true;
-    }
+    if (!wcard && skip === channelName) { return true; }
 
-    if (skipBroadcast && (channelName.indexOf(skip.slice(0, -1)) === 0)) {
-      return true;
-    }
-  }
-
-  return false;
+    if (wcard && (channelName.indexOf(skip.slice(0, -1)) === 0)) { return true; }
+  });
 };
 
 
-Wire.prototype.getHandlers = function (channel) {
+Wire.prototype.__getHandlers = function (channel) {
   var self = this, result;
 
-  if (!this.__sortedCache__[channel]) {
+  if (!this.__sortedCache[channel]) {
     result = [];
 
-    this.__handlers__.forEach(function (handler) {
+    this.__handlers.forEach(function (handler) {
 
       // Respect skips.
-      if (self.checkSkip(handler.name, channel)) {
+      if (self.__checkSkip(handler.name, channel)) {
         return;
       }
 
@@ -185,16 +176,16 @@ Wire.prototype.getHandlers = function (channel) {
 
     // We must use stable sort here to be sure, that handlers in the resulting
     // list will be placed exactly in the order they are declared.
-    this.__sortedCache__[channel] = stableSort(result);
+    this.__sortedCache[channel] = stableSort(result);
   }
 
-  return this.__sortedCache__[channel];
+  return this.__sortedCache[channel];
 };
 
 
 // Internal helper that runs handlers for a single channel
 function emitSingle(_self, channel, params, callback) {
-  var stash = _self.getHandlers(channel).slice(),
+  var stash = _self.__getHandlers(channel).slice(),
       wh, fn, _err;
 
   // iterates through handlers of stash
@@ -222,12 +213,12 @@ function emitSingle(_self, channel, params, callback) {
       _self.off(wh.channel, fn);
     }
 
-    (_self.__hooks__.eachBefore || []).forEach(function (hook) {
+    (_self.__hooks.eachBefore || []).forEach(function (hook) {
       hook(fn, params);
     });
 
     function eachAfterHook() {
-      (_self.__hooks__.eachAfter || []).forEach(function (hook) {
+      (_self.__hooks.eachAfter || []).forEach(function (hook) {
         hook(fn, params);
       });
     }
@@ -390,14 +381,14 @@ Wire.prototype.on = function (channels, options, handler) {
 
     // Count main channel handler (no wildcards, zero-priority)
     if (wh.priority === 0) {
-      this.__knownChannels__[channelName] = (this.__knownChannels__[channelName] || 0) + 1;
+      this.__knownChannels[channelName] = (this.__knownChannels[channelName] || 0) + 1;
     }
 
-    this.__handlers__.push(wh);
+    this.__handlers.push(wh);
   }, this);
 
   // TODO: Move to separate method
-  this.__sortedCache__ = [];
+  this.__sortedCache = [];
 };
 
 
@@ -482,7 +473,7 @@ Wire.prototype.after = function (channel, options, handler) {
  **/
 Wire.prototype.off = function (channel, handler) {
 
-  this.__handlers__.forEach(function (wh) {
+  this.__handlers.forEach(function (wh) {
     if (channel !== wh.channel) {
       return; // continue
     }
@@ -493,7 +484,7 @@ Wire.prototype.off = function (channel, handler) {
 
     // Uncount back zero-priority handler
     if (wh.priority === 0) {
-      this.__knownChannels__[channel]--;
+      this.__knownChannels[channel]--;
     }
 
     // Just replace with dummy call, to keep cache lists intact
@@ -520,8 +511,7 @@ Wire.prototype.skip = function (channel, skipList) {
 
   if (channel.indexOf('*') !== -1 &&
       channel.indexOf('*') !== channel.length - 1) {
-    throw new Error("Bad channel name '" + channel + "'. Broadcast symbol (*) must " +
-                    'be the last character.');
+    throw new Error("Bad channel name '" + channel + "'. Wildard can be tailing only.");
   }
 
   if (isString(skipList)) {
@@ -532,21 +522,21 @@ Wire.prototype.skip = function (channel, skipList) {
     throw new Error('skipList must be String or Array of Strings');
   }
 
-  this.__skips__[channel] = this.__skips__[channel] || {};
+  this.__skips[channel] = this.__skips[channel] || {};
 
   skipList.forEach(function (name) {
-    if (!this.__skips__.hasOwnProperty(name)) {
-      this.__skips__[name] = [];
+    if (!this.__skips.hasOwnProperty(name)) {
+      this.__skips[name] = [];
     }
 
     // Add channel name only if it not exists.
-    if (this.__skips__[name].indexOf(channel) === -1) {
-      this.__skips__[name].push(channel);
+    if (this.__skips[name].indexOf(channel) === -1) {
+      this.__skips[name].push(channel);
     }
   }, this);
 
   // TODO: Move to separate method
-  this.__sortedCache__ = [];
+  this.__sortedCache = [];
 };
 
 
@@ -558,7 +548,7 @@ Wire.prototype.skip = function (channel, skipList) {
  *  with zero priority (main handler)
  **/
 Wire.prototype.has = function (channel) {
-  return Boolean(this.__knownChannels__[channel]);
+  return Boolean(this.__knownChannels[channel]);
 };
 
 
@@ -574,7 +564,7 @@ Wire.prototype.stat = function () {
       known = [];
 
   // Scan all unique channels, ignore priorities
-  this.__handlers__.forEach(function (wh) {
+  this.__handlers.forEach(function (wh) {
     if (known.indexOf(wh.channel) === -1) {
       known.push(wh.channel);
     }
@@ -583,7 +573,7 @@ Wire.prototype.stat = function () {
 
   // Extract info
   known.forEach(function (name) {
-    result.push({ name : name, listeners: this.getHandlers(name) });
+    result.push({ name : name, listeners: this.__getHandlers(name) });
   }, this);
 
   return result;
