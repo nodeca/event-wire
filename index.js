@@ -79,6 +79,11 @@ function isGeneratorFunction(obj) {
 }
 
 
+function isPromise(obj) {
+  return typeof obj.then === 'function';
+}
+
+
 //////////////////////////////////////////////////////////////////////////////
 
 
@@ -117,6 +122,7 @@ function Wire(options) {
   var opts = options || {};
 
   this.__co = opts.co || require('co');
+  this.__p = opts.p || Promise;
 
   this.__hooks          = {};
   this.__handlers       = [];
@@ -183,78 +189,103 @@ Wire.prototype.__getHandlers = function (channel) {
 };
 
 
-// Internal helper that runs handlers for a single channel
-function emitSingle(_self, channel, params, callback) {
-  var stash = _self.__getHandlers(channel).slice(),
-      wh, fn, _err;
+function eachBeforeHook(slf, handlerFn, params) {
+  if (!slf.__hooks.eachBefore) { return; }
 
-  // iterates through handlers of stash
-  function walk(err) {
-
-    // chain finished - exit
-    if (!stash.length) {
-      callback(err);
-      return;
-    }
-
-    // Get next element
-    wh = stash.shift();
-    fn = wh.func;
-
-    // if error - skip all handlers except 'ehshured'
-    if (err && !wh.ensure) {
-      walk(err);
-      return;
-    }
-
-    wh.ncalled++;
-
-    if (wh.once) {
-      _self.off(wh.channel, fn);
-    }
-
-    (_self.__hooks.eachBefore || []).forEach(function (hook) {
-      hook(fn, params);
-    });
-
-    function eachAfterHook() {
-      (_self.__hooks.eachAfter || []).forEach(function (hook) {
-        hook(fn, params);
-      });
-    }
-
-    // Call handler, but protect err from override,
-    // if already exists
-    if (wh.gen) {
-      _self.__co(fn, params)
-        .then(function () {
-          eachAfterHook();
-          // Don't try to intercept exceptions from next handlers
-          process.nextTick(walk.bind(null, err));
-        })
-        .catch(function (e) {
-          eachAfterHook();
-          // Don't try to intercept exceptions from next handlers
-          process.nextTick(walk.bind(null, err || e));
-        });
-    } else if (!wh.sync) {
-      fn(params, function (e) {
-        eachAfterHook();
-        walk(err || e);
-      });
-    } else {
-      _err = fn(params);
-      eachAfterHook();
-      walk(err || _err);
-    }
-
-    return;
-  }
-
-  // start stash walker
-  walk();
+  slf.__hooks.eachBefore.forEach(function (hook) {
+    hook(handlerFn, params);
+  });
 }
 
+
+function eachAfterHook(slf, handlerFn, params) {
+  if (!slf.__hooks.eachAfter) { return; }
+
+  slf.__hooks.eachAfter.forEach(function (hook) {
+    hook(handlerFn, params);
+  });
+}
+
+
+Wire.prototype.__emitOne = function (ch, params) {
+  var p = this.__co.co(true),
+      self = this,
+      errored = false, err;
+
+  function storeErrOnce(e) {
+    if (errored) { return; }
+    errored = true;
+    err = e;
+  }
+
+  this.__getHandlers(ch).slice().forEach(function (wh) {
+    if (errored && !wh.ensure) { return; }
+
+    var fn = wh.func;
+
+    if (wh.once) { self.off(wh.channel, fn); }
+
+    if (wh.gen) {
+      // Handler is generator
+      p = p.then(function () {
+        if (errored && !wh.ensure) { return null; }
+        wh.ncalled++;
+        eachBeforeHook(self, fn, params);
+
+        return self.__co(fn, params);
+      });
+
+    } else if (wh.sync) {
+      // Handler is sync function, but can
+      // throw, return error or Promise.
+      p = p.then(function () {
+        if (errored && !wh.ensure) { return null; }
+        wh.ncalled++;
+        eachBeforeHook(self, fn, params);
+
+        var val = fn(params);
+
+        if (val) {
+          if (isPromise(val)) {
+            return val;
+          }
+          throw val;
+        }
+      });
+    } else {
+      // Handler is async function
+      p = p.then(function () {
+        if (errored && !wh.ensure) { return null; }
+        wh.ncalled++;
+        eachBeforeHook(self, fn, params);
+
+        return new self.__p(function (resolve, reject) {
+          fn(params, function (err) {
+            if (!err) {
+              resolve();
+            } else {
+              reject (err);
+            }
+          });
+        });
+      });
+    }
+
+    // Finalize handlker exec - should care about errors and post-hooks.
+    p =  p.catch(storeErrOnce)
+          .then(function () {
+            if (errored && !wh.ensure) { return null; }
+            eachAfterHook(self, fn, params);
+          })
+          .catch(storeErrOnce);
+  });
+
+  // We combined full chain of calls, now restore
+  // the first if happened, and return as promise result
+  return p.then(function () {
+    if (errored) { throw err; }
+  });
+};
 
 /**
  *  Wire#emit(channels [, params, callback]) -> Void
@@ -266,57 +297,38 @@ function emitSingle(_self, channel, params, callback) {
  *  handlers finished, optional `callback(err)` (if specified) fired.
  **/
 Wire.prototype.emit = function (channels, params, callback) {
-  var self = this, _chs, chan;
-
   if (!callback && isFunction(params)) {
     callback = params;
     params = null;
   }
 
-  return new Promise(function (resolve, reject) {
+  var p    = this.__co.co(true),
+      self = this,
+      chs  = Array.isArray(channels) ? channels : [ channels ],
+      bad  = chs.some(function (ch) { return ch.indexOf('*') >= 0; });
 
-    function finish(err) {
-      if (!err) {
-        resolve();
-      } else {
-        reject(err);
-      }
+  if (!bad) {
+    chs.forEach(function (ch) {
+      p = p.then(function () { return self.__emitOne(ch, params); });
+    });
+  } else {
+    p = p.then(function () {
+      throw new Error("Bad channel name '" + bad + "'. Wildard `*` not allowed in emitter");
+    });
+  }
 
-      if (callback) {
-        callback(err);
-      }
-    }
+  // No callback - return promise
+  if (!callback) {
+    return p;
+  }
 
-    var _c = Array.isArray(channels) ? channels : [ channels ];
-
-    for (var i = 0; i < _c.length; i++) {
-      if (_c[i].indexOf('*') >= 0) {
-        finish(new Error("Bad channel name '" + _c[i] + "'. Wildard `*` not allowed in emitter"));
-        return;
-      }
-    }
-
-    // slightly optimize regular calls, with single channel
-    if (!Array.isArray(channels)) {
-      emitSingle(self, channels, params, finish);
-      return;
-    }
-
-    // Lot of channel - do chaining
-    _chs = channels.slice();
-
-    function walk(err) {
-      if (err || !_chs.length) {
-        finish(err);
-        return;
-      }
-
-      chan = _chs.shift();
-      emitSingle(self, chan, params, walk);
-    }
-
-    walk();
-  });
+  // Callback magic
+  p.then(function () {
+      process.nextTick(callback.bind(null));
+    })
+    .catch(function (err) {
+      process.nextTick(callback.bind(null, err));
+    });
 };
 
 
