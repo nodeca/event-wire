@@ -15,9 +15,6 @@ function isString(obj) { return _class(obj) === '[object String]'; }
 function isFunction(obj) { return _class(obj) === '[object Function]'; }
 
 
-var co = require('co');
-
-
 //
 // Simplified stable sort implementation from Lo-Dash (http://lodash.com/)
 //
@@ -114,8 +111,12 @@ function WireHandler(channel, options, func) {
 //////////////////////////////////////////////////////////////////////////////
 
 
-function Wire() {
-  if (!(this instanceof Wire)) { return new Wire(); }
+function Wire(options) {
+  if (!(this instanceof Wire)) { return new Wire(options); }
+
+  var opts = options || {};
+
+  this.__co = opts.co || require('co');
 
   this.__hooks__          = {};
   this.__handlers__       = [];
@@ -234,7 +235,7 @@ function emitSingle(_self, channel, params, callback) {
     // Call handler, but protect err from override,
     // if already exists
     if (wh.gen) {
-      co(fn, params)
+      _self.__co(fn, params)
         .then(function () {
           eachAfterHook();
           // Don't try to intercept exceptions from next handlers
