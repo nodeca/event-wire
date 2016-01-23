@@ -13,7 +13,7 @@ listeners.
 
 Features:
 
-- sync & async listeners
+- sync, async & generator listeners
 - wildards
 - exclusions
 
@@ -29,13 +29,19 @@ npm install event-wire --save
 
 ### constructor
 
+Create new `event-wire` instanse.
+
 ```js
-var wire = new require('event-wire');
-// or
 var wire = require('event-wire')();
+
+// With alternate libs
+var wire = require('event-wire')({
+  co: require('bluebird-co'),
+  p: require('bluebird')
+});
 ```
 
-Create new `event-wire` instanse.
+Options can define alternate core libraries (co & promises).
 
 
 ### .emit(channels [, obj, callback])
@@ -43,7 +49,7 @@ Create new `event-wire` instanse.
 Sends message with `obj` param into the `channels` (String|Array). Once all
 sync and ascync handlers finished, optional `callback(err)` (if specified) fired.
 
-If callback not passed, emit returns `Promise`.
+If callback not passed, `Promise` is returned.
 
 
 ### .on(channels [, options], handler)
@@ -54,8 +60,17 @@ either sync, async or generator function:
 
 ```js
 wire.on('foobar', function () {
-  // do stuff here
   return new Error('test'); // You can return error
+});
+
+wire.on('foobar', function () {
+  throw new Error('test'); // You can throw error
+});
+
+wire.on('foobar', function () {
+  return new Promise(resolve => { // You can return Promise
+    setTimeout(() => { resolve(); }, 1000);
+  });
 });
 
 wire.on('foobar', function (obj) {
@@ -78,7 +93,8 @@ wire.on('foobar', function* (obj) {
 });
 ```
 
-Each handler can termitate chain execution by returning not falsy result (error)
+Each handler can termitate chain execution by returning not falsy
+result (error). Also handker can throw and return `Promise`.
 
 Options:
 
@@ -108,7 +124,8 @@ Removes `handler` of a channel, or removes ALL handlers of a channel if
 
 ### .skip(channel, skipList)
 
-Exclude calling list of named handlers for given chennel (wildards allowed):
+Exclude calling list of named handlers for given channel (wildard allowed
+at the end):
 
 ```js
 wire.skip('server:static.*', [
@@ -133,10 +150,10 @@ handlers. Or to track number of calls.
 
 ### .hook(eventName, fn)
 
-`eventName`:
+Internal messaging for debug. Currently supported events:
 
-- `eachBefore` (handler, params) will be called before each handler
-- `eachAfter` (handler, params) will be called after each handler
+- `eachBefore` (handler, params) - called before every handler execute.
+- `eachAfter` (handler, params) - called after every handler execute.
 
 
 ## License

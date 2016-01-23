@@ -1,3 +1,12 @@
+3.0.0 / WIP
+------------------
+
+- Rewrite internals from callbacks to promises. Now much
+  more friendly to exceptions.
+- Sync handlers now can return promise & throw.
+
+
+
 2.0.3 / 2016-01-13
 ------------------
 

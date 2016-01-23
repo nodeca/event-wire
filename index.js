@@ -189,6 +189,8 @@ Wire.prototype.__getHandlers = function (channel) {
 };
 
 
+// Helpers to run hooks
+//
 function eachBeforeHook(slf, handlerFn, params) {
   if (!slf.__hooks.eachBefore) { return; }
 
@@ -196,7 +198,6 @@ function eachBeforeHook(slf, handlerFn, params) {
     hook(handlerFn, params);
   });
 }
-
 
 function eachAfterHook(slf, handlerFn, params) {
   if (!slf.__hooks.eachAfter) { return; }
@@ -207,6 +208,8 @@ function eachAfterHook(slf, handlerFn, params) {
 }
 
 
+// Run all listeners for specific channel
+//
 Wire.prototype.__emitOne = function (ch, params) {
   var p = this.__co.co(true),
       self = this,
@@ -277,7 +280,7 @@ Wire.prototype.__emitOne = function (ch, params) {
   });
 
   // We combined full chain of calls, now restore
-  // the first if happened, and return as promise result
+  // the first error if happened, and return as promise.
   return p.then(function () {
     if (errored) { throw err; }
   });
