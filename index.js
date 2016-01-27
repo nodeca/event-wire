@@ -283,33 +283,34 @@ Wire.prototype.__emitOne = function (ch, params) {
 
 /**
  *  Wire#emit(channels [, params, callback]) -> Void
- *  - channels (String|Array):
+ *  - channel (String):
  *  - params (Mixed):
  *  - callback (Function):
  *
  *  Sends message with `params` into the `channel`. Once all sync and ascync
  *  handlers finished, optional `callback(err)` (if specified) fired.
  **/
-Wire.prototype.emit = function (channels, params, callback) {
+Wire.prototype.emit = function (channel, params, callback) {
   if (!callback && isFunction(params)) {
     callback = params;
     params = null;
   }
 
-  var p    = this.__co.co(true),
-      self = this,
-      chs  = Array.isArray(channels) ? channels : [ channels ],
-      bad  = chs.some(function (ch) { return ch.indexOf('*') >= 0; });
+  var p = this.__p.resolve();
 
-  if (!bad) {
-    chs.forEach(function (ch) {
-      p = p.then(function () { return self.__emitOne(ch, params); });
-    });
-  } else {
+  if (!isString(channel)) {
     p = p.then(function () {
-      throw new Error("Bad channel name '" + bad + "'. Wildard `*` not allowed in emitter");
+      throw new Error('Channel name should be a string: ' + channel);
     });
   }
+  if (channel.indexOf('*') >= 0) {
+    p = p.then(function () {
+      throw new Error("Bad channel name '" + channel + "'. Wildard `*` not allowed in emitter");
+    });
+  }
+
+  var self = this;
+  p = p.then(function () { return self.__emitOne(channel, params); });
 
   // No callback - return promise
   if (!callback) {

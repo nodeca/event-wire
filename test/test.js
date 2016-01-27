@@ -224,22 +224,6 @@ describe('Wire', function () {
   });
 
 
-  it('emit multiple', function (done) {
-    var w = ew(),
-        data = [];
-
-    w.on('test.1', function h1() { data.push(1); });
-    w.on('test.2', function h2() { data.push(2); });
-    w.on('test.*', function hw() { data.push(3); });
-
-    w.emit([ 'test.1', 'test.2', 'test.3' ], function (err) {
-      assert.ifError(err);
-      assert.deepEqual(data, [ 1, 3, 2, 3, 3 ]);
-      done();
-    });
-  });
-
-
   it('sync + data', function (done) {
     var w = ew(),
         data = {};
@@ -437,10 +421,18 @@ describe('Wire', function () {
     });
 
 
-    it('bad channel name (emit)', function (done) {
+    it('bad channel name (emit *)', function (done) {
       var w = ew();
       // Do we really need it?
       w.emit('test*', function (err) {
+        done(!err);
+      });
+    });
+
+    it('bad channel name (emit [])', function (done) {
+      var w = ew();
+      // Do we really need it?
+      w.emit([ 'test1', 'test2' ], function (err) {
         done(!err);
       });
     });

@@ -44,10 +44,10 @@ var wire = require('event-wire')({
 Options can define alternate core libraries (co & promises).
 
 
-### .emit(channels [, obj, callback])
+### .emit(channel [, obj, callback])
 
-Sends message with `obj` param into the `channels` (String|Array). Once all
-sync and ascync handlers finished, optional `callback(err)` (if specified) fired.
+Sends message with `obj` param into the `channel`. Once all sync and
+ascync handlers finished, optional `callback(err)` (if specified) fired.
 
 If callback not passed, `Promise` is returned.
 
@@ -116,7 +116,7 @@ The same as `.on()`, but executed only one time.
 Aliases of `.on(...)`, but with priority `-10` and `+10`
 
 
-### .off(channel[, handler])
+### .off(channel [, handler])
 
 Removes `handler` of a channel, or removes ALL handlers of a channel if
 `handler` is not given.
