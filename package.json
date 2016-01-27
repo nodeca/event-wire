@@ -18,7 +18,8 @@
     "index.js"
   ],
   "dependencies": {
-    "co": "^4.6.0"
+    "co": "^4.6.0",
+    "next-tick": "^0.2.2"
   },
   "devDependencies": {
     "coveralls": "~2.11.2",

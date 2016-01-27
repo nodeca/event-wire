@@ -4,6 +4,9 @@
 'use strict';
 
 
+var nextTick = require('next-tick');
+
+
 //////////////////////////////////////////////////////////////////////////////
 // Helpers
 
@@ -315,10 +318,10 @@ Wire.prototype.emit = function (channels, params, callback) {
 
   // Callback magic
   p.then(function () {
-      process.nextTick(callback.bind(null));
+      nextTick(callback.bind(null));
     })
     .catch(function (err) {
-      process.nextTick(callback.bind(null, err));
+      nextTick(callback.bind(null, err));
     });
 };
 
