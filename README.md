@@ -106,9 +106,9 @@ Options:
   guarantee it intat after code uglifiers.
 
 
-### .once(channels [, options], handler)
+### .once(...)
 
-The same as `.on()`, but executed only one time.
+The same as `.on(...)`, but executed only one time.
 
 
 ### .before(...), .after(...)

@@ -1,10 +1,10 @@
-3.0.0 / WIP
+3.0.0 / 2016-01-27
 ------------------
 
 - Rewrite internals from callbacks to promises. Now much
   more friendly to exceptions.
 - Sync handlers now can return promise & throw.
-
+- Dropped arrays support in `.emit()`.
 
 
 2.0.3 / 2016-01-13
