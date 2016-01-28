@@ -10,8 +10,6 @@ var nextTick = require('next-tick');
 //////////////////////////////////////////////////////////////////////////////
 // Helpers
 
-function noop() {}
-
 function _class(obj) { return Object.prototype.toString.call(obj); }
 
 function isString(obj) { return _class(obj) === '[object String]'; }
@@ -218,6 +216,8 @@ Wire.prototype.__emitOne = function (ch, params) {
 
   this.__getHandlers(ch).slice().forEach(function (wh) {
     var fn = wh.func;
+
+    if (!fn) { return; }
 
     if (wh.once) { self.off(wh.channel, fn); }
 
@@ -494,9 +494,7 @@ Wire.prototype.off = function (channel, handler) {
       this.__knownChannels[channel]--;
     }
 
-    // Just replace with dummy call, to keep cache lists intact
-    wh.sync = true;
-    wh.func = noop;
+    wh.func = null;
   }, this);
 };
 
