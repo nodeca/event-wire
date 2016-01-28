@@ -1,3 +1,10 @@
+3.1.0 / 2016-01-28
+------------------
+
+- Pass full handler info to hooks.
+- Optimized `.once()` / `.off()` logic.
+
+
 3.0.0 / 2016-01-27
 ------------------
 
