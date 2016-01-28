@@ -152,8 +152,8 @@ handlers. Or to track number of calls.
 
 Internal messaging for debug. Currently supported events:
 
-- `eachBefore` (handler, params) - called before every handler execute.
-- `eachAfter` (handler, params) - called after every handler execute.
+- `eachBefore` (handlerInfo, params) - called before every handler execute.
+- `eachAfter` (handlerInfo, params) - called after every handler execute.
 
 
 ## License

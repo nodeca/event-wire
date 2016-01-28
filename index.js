@@ -192,11 +192,11 @@ Wire.prototype.__getHandlers = function (channel) {
 
 // Helper to run hooks
 //
-function _hook(slf, name, handlerFn, params) {
+function _hook(slf, name, handlerInfo, params) {
   if (!slf.__hooks[name]) { return; }
 
   slf.__hooks[name].forEach(function (hook) {
-    hook(handlerFn, params);
+    hook(handlerInfo, params);
   });
 }
 
@@ -226,7 +226,7 @@ Wire.prototype.__emitOne = function (ch, params) {
       p = p.then(function () {
         if (errored && !wh.ensure) { return null; }
         wh.ncalled++;
-        _hook(self, 'eachBefore', fn, params);
+        _hook(self, 'eachBefore', wh, params);
 
         return self.__co(fn, params);
       });
@@ -237,7 +237,7 @@ Wire.prototype.__emitOne = function (ch, params) {
       p = p.then(function () {
         if (errored && !wh.ensure) { return null; }
         wh.ncalled++;
-        _hook(self, 'eachBefore', fn, params);
+        _hook(self, 'eachBefore', wh, params);
 
         var val = fn(params);
 
@@ -251,7 +251,7 @@ Wire.prototype.__emitOne = function (ch, params) {
       p = p.then(function () {
         if (errored && !wh.ensure) { return null; }
         wh.ncalled++;
-        _hook(self, 'eachBefore', fn, params);
+        _hook(self, 'eachBefore', wh, params);
 
         return new self.__p(function (resolve, reject) {
           fn(params, function (err) {
@@ -269,7 +269,7 @@ Wire.prototype.__emitOne = function (ch, params) {
     p =  p.catch(storeErrOnce)
           .then(function () {
             if (errored && !wh.ensure) { return null; }
-            _hook(self, 'eachAfter', fn, params);
+            _hook(self, 'eachAfter', wh, params);
           })
           .catch(storeErrOnce);
   });
