@@ -437,6 +437,33 @@ describe('Wire', function () {
       });
     });
 
+    it('emit empty values', function () {
+      var w = ew(),
+          log = [];
+
+      w.on('test', function () {
+        log.push(Array.prototype.slice.call(arguments, 0));
+      });
+
+      /*eslint-disable no-undefined*/
+      return w.emit('test', {})
+        .then(function () { return w.emit('test', []); })
+        .then(function () { return w.emit('test', ''); })
+        .then(function () { return w.emit('test', null); })
+        .then(function () { return w.emit('test', undefined); })
+        .then(function () { return w.emit('test', false); })
+        .then(function () {
+          assert.deepEqual(log, [
+            { '0': {} },
+            { '0': [] },
+            { '0': '' },
+            { '0': null },
+            { '0': undefined },
+            { '0': false }
+          ]);
+        });
+    });
+
   });
 
 
