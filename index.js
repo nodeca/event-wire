@@ -318,12 +318,8 @@ Wire.prototype.emit = function (channel, params, callback) {
   }
 
   // Callback magic
-  p.then(function () {
-      nextTick(callback.bind(null));
-    })
-    .catch(function (err) {
-      nextTick(callback.bind(null, err));
-    });
+  p.then(function () { nextTick(callback.bind(null)); })
+   .catch(function (err) { nextTick(callback.bind(null, err)); });
 };
 
 

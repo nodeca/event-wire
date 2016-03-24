@@ -13,7 +13,7 @@ GITHUB_PROJ := https://github.com//markdown-it/${NPM_PACKAGE}
 
 
 lint:
-	eslint --reset index.js test
+	eslint index.js test
 
 test: lint
 	mocha

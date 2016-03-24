@@ -238,7 +238,7 @@ describe('Wire', function () {
       obj.foo = 5;
     });
 
-    w.emit('test', data, function(err) {
+    w.emit('test', data, function (err) {
       assert.ifError(err);
       assert.deepEqual(data, { foo: 5 });
       done(err);
@@ -336,7 +336,7 @@ describe('Wire', function () {
       throw new Error('overriden');
     });
 
-    w.emit('test', data, function(err) {
+    w.emit('test', data, function (err) {
       assert.equal(err.message, 'test');
       assert.deepEqual(data, { foo: 5, zab: 6 });
       done();
@@ -353,7 +353,7 @@ describe('Wire', function () {
       cb();
     });
 
-    w.emit('test', data, function(err) {
+    w.emit('test', data, function (err) {
       assert.deepEqual(data, { foo: 5 });
       done(err);
     });
@@ -372,7 +372,7 @@ describe('Wire', function () {
       obj.foo = 5;
     });
 
-    w.emit('test', data, function() {
+    w.emit('test', data, function () {
       assert.deepEqual(data, {});
       done();
     });
@@ -460,12 +460,12 @@ describe('Wire', function () {
         .then(function () { return w.emit('test', false); })
         .then(function () {
           assert.deepEqual(log, [
-            { '0': {} },
-            { '0': [] },
-            { '0': '' },
-            { '0': null },
-            { '0': undefined },
-            { '0': false }
+            { 0: {} },
+            { 0: [] },
+            { 0: '' },
+            { 0: null },
+            { 0: undefined },
+            { 0: false }
           ]);
         });
     });
