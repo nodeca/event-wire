@@ -22,6 +22,8 @@
     "next-tick": "^0.2.2"
   },
   "devDependencies": {
+    "bluebird": "^3.3.4",
+    "bluebird-co": "^2.1.2",
     "coveralls": "~2.11.2",
     "eslint": "0.20.0",
     "eslint-plugin-nodeca": "^1.0.0",
