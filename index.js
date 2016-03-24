@@ -204,7 +204,7 @@ function _hook(slf, name, handlerInfo, params) {
 // Run all listeners for specific channel
 //
 Wire.prototype.__emitOne = function (ch, params) {
-  var p = this.__co.co(true),
+  var p = this.__p.resolve(),
       self = this,
       errored = false, err;
 
