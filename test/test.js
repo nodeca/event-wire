@@ -6,6 +6,7 @@
 var assert = require('assert');
 var ew     = require('../');
 
+var ew_opts = {};
 
 describe('Wire', function () {
 
@@ -17,7 +18,7 @@ describe('Wire', function () {
 
 
   it('.on', function (done) {
-    var w = ew(),
+    var w = ew(ew_opts),
         data = [];
 
     w.on('test', function h1() { data.push(1); });
@@ -33,7 +34,7 @@ describe('Wire', function () {
 
 
   it('.off', function () {
-    var w = ew();
+    var w = ew(ew_opts);
 
     function h1() {}
     function h2() {}
@@ -59,7 +60,7 @@ describe('Wire', function () {
 
 
   it('.after', function (done) {
-    var w = ew(),
+    var w = ew(ew_opts),
         data = [];
 
     w.on('test', { priority: 11 }, function h1() { data.push(1); });
@@ -80,7 +81,7 @@ describe('Wire', function () {
 
 
   it('.before', function (done) {
-    var w = ew(),
+    var w = ew(ew_opts),
         data = [];
 
     w.before('test', function h1() { data.push(1); });
@@ -101,7 +102,7 @@ describe('Wire', function () {
 
 
   it('.once', function (done) {
-    var w = ew(),
+    var w = ew(ew_opts),
         data = [];
 
     w.once('test.*', function h1() { data.push(1); });
@@ -119,7 +120,7 @@ describe('Wire', function () {
 
 
   it('.skip', function (done) {
-    var w = ew(), data;
+    var w = ew(ew_opts), data;
 
     w.on('foo.*', function foo() { data.push(1); });
     w.on('foo.bar', { name: 'foobar' }, function () { data.push(2); });
@@ -152,7 +153,7 @@ describe('Wire', function () {
 
 
   it('.skip + wildard', function (done) {
-    var w = ew(),
+    var w = ew(ew_opts),
         data;
 
     w.on('foo.*', function foo() { data.push(1); });
@@ -198,7 +199,7 @@ describe('Wire', function () {
 
 
   it('.has', function () {
-    var w = ew();
+    var w = ew(ew_opts);
 
     assert.equal(w.has('test'), false);
 
@@ -213,7 +214,7 @@ describe('Wire', function () {
 
 
   it('.stat', function () {
-    var w = ew();
+    var w = ew(ew_opts);
 
     w.once('test.*', function h1() {});
     w.once('test.1', function h2() {});
@@ -225,7 +226,7 @@ describe('Wire', function () {
 
 
   it('sync + data', function (done) {
-    var w = ew(),
+    var w = ew(ew_opts),
         data = {};
 
     w.on('test', function (obj) {
@@ -241,7 +242,7 @@ describe('Wire', function () {
 
 
   it('sync + return err', function (done) {
-    var w = ew(),
+    var w = ew(ew_opts),
         data = {};
 
     w.on('test', function h1() {
@@ -261,7 +262,7 @@ describe('Wire', function () {
 
 
   it('sync + throw err', function (done) {
-    var w = ew(),
+    var w = ew(ew_opts),
         data = {};
 
     w.on('test', function h1() {
@@ -281,7 +282,7 @@ describe('Wire', function () {
 
 
   it('sync + promise', function (done) {
-    var w = ew(),
+    var w = ew(ew_opts),
         data = [];
 
     w.on('test', function h1() {
@@ -305,7 +306,7 @@ describe('Wire', function () {
 
 
   it('`ensure` option', function (done) {
-    var w = ew(),
+    var w = ew(ew_opts),
         data = {};
 
     w.on('test', function h1() {
@@ -339,7 +340,7 @@ describe('Wire', function () {
 
 
   it('async + data', function (done) {
-    var w = ew(),
+    var w = ew(ew_opts),
         data = {};
 
     w.on('test', function (obj, cb) {
@@ -355,7 +356,7 @@ describe('Wire', function () {
 
 
   it('async + err', function (done) {
-    var w = ew(),
+    var w = ew(ew_opts),
         data = {};
 
     w.on('test', function h1(obj, cb) {
@@ -376,7 +377,7 @@ describe('Wire', function () {
   describe('errors', function () {
 
     it('bad priority', function () {
-      var w = ew();
+      var w = ew(ew_opts);
 
       assert.throws(function () {
         w.after('test', { priority: -5 }, function () {});
@@ -389,7 +390,7 @@ describe('Wire', function () {
 
 
     it('bad params count', function () {
-      var w = ew();
+      var w = ew(ew_opts);
 
       assert.throws(function () { w.on('test'); });
 
@@ -401,7 +402,7 @@ describe('Wire', function () {
 
 
     it('bad channel name (configure)', function () {
-      var w = ew();
+      var w = ew(ew_opts);
 
       assert.throws(function () {
         w.on('', function () {});
@@ -422,7 +423,7 @@ describe('Wire', function () {
 
 
     it('bad channel name (emit *)', function (done) {
-      var w = ew();
+      var w = ew(ew_opts);
       // Do we really need it?
       w.emit('test*', function (err) {
         done(!err);
@@ -430,7 +431,7 @@ describe('Wire', function () {
     });
 
     it('bad channel name (emit [])', function (done) {
-      var w = ew();
+      var w = ew(ew_opts);
       // Do we really need it?
       w.emit([ 'test1', 'test2' ], function (err) {
         done(!err);
@@ -438,7 +439,7 @@ describe('Wire', function () {
     });
 
     it('emit empty values', function () {
-      var w = ew(),
+      var w = ew(ew_opts),
           log = [];
 
       w.on('test', function () {
@@ -470,7 +471,7 @@ describe('Wire', function () {
   describe('Generators', function () {
 
     it('.on', function (done) {
-      var w = ew(),
+      var w = ew(ew_opts),
           data = [],
           i = 5;
 
@@ -499,7 +500,7 @@ describe('Wire', function () {
 
 
     it('throw', function (done) {
-      var w = ew();
+      var w = ew(ew_opts);
 
       w.on('test', function* (d) {
         throw 'test';
@@ -513,7 +514,7 @@ describe('Wire', function () {
 
 
     it('throw after yield', function (done) {
-      var w = ew();
+      var w = ew(ew_opts);
 
       function defer() {
         return new Promise(function (resolve) {
@@ -534,7 +535,7 @@ describe('Wire', function () {
 
 
     it('promise resolved', function (done) {
-      var w = ew();
+      var w = ew(ew_opts);
 
       function defer() {
         return new Promise(function (resolve) {
@@ -555,7 +556,7 @@ describe('Wire', function () {
 
 
     it('promise rejected', function (done) {
-      var w = ew();
+      var w = ew(ew_opts);
 
       w.on('test', function* (d) {
         throw 'test';
@@ -573,7 +574,7 @@ describe('Wire', function () {
   describe('.hook', function () {
 
     it('eachBefore and eachAfter with async', function () {
-      var w = ew();
+      var w = ew(ew_opts);
 
       var beforeFns = [], afterFns = [];
 
@@ -603,7 +604,7 @@ describe('Wire', function () {
 
 
     it('eachBefore and eachAfter with sync', function () {
-      var w = ew();
+      var w = ew(ew_opts);
 
       var beforeFns = [], afterFns = [];
 
@@ -630,7 +631,7 @@ describe('Wire', function () {
 
 
     it('eachBefore and eachAfter with promise', function (done) {
-      var w = ew();
+      var w = ew(ew_opts);
 
       function defer() {
         return new Promise(function (resolve) {
