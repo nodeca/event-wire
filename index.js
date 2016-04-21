@@ -103,6 +103,7 @@ function WireHandler(channel, options, func) {
   this.sync      = func.length === 0 || func.length === 1;
   this.once      = Boolean(options.once);
   this.ensure    = Boolean(options.ensure);
+  this.parallel  = Boolean(options.parallel);
   this.priority  = Number(options.priority || 0);
   this.ncalled   = 0;
 
@@ -214,10 +215,9 @@ Wire.prototype.__emitOne = function (ch, params) {
     err = e;
   }
 
-  this.__getHandlers(ch).slice().forEach(function (wh) {
+  function wrapHandler(wh) {
     var fn = wh.func;
-
-    if (!fn) { return; }
+    var p = self.__p.resolve();
 
     if (wh.once) { self.off(wh.channel, fn); }
 
@@ -258,20 +258,61 @@ Wire.prototype.__emitOne = function (ch, params) {
             if (!err) {
               resolve();
             } else {
-              reject (err);
+              reject(err);
             }
           });
         });
       });
     }
 
-    // Finalize handlker exec - should care about errors and post-hooks.
-    p =  p.catch(storeErrOnce)
-          .then(function () {
-            if (errored && !wh.ensure) { return null; }
-            _hook(self, 'eachAfter', wh, params);
-          })
-          .catch(storeErrOnce);
+    // Finalize handler exec - should care about errors and post-hooks.
+    p = p.catch(storeErrOnce)
+         .then(function () {
+           if (errored && !wh.ensure) { return null; }
+           _hook(self, 'eachAfter', wh, params);
+         })
+         .catch(storeErrOnce);
+
+    return p;
+  }
+
+  var handlers = this.__getHandlers(ch).slice();
+  var lastIdx = 0;
+
+  handlers.forEach(function (wh, i) {
+    if (i < lastIdx) return;
+
+    if (!wh.func) return;
+
+    if (!wh.parallel) {
+      p = p.then(function () {
+        return wrapHandler(wh);
+      });
+
+      return;
+    }
+
+    var arr = [ wh ];
+    var j;
+
+    for (j = i + 1; j < handlers.length; j++) {
+      var wh_curr = handlers[j];
+
+      if (!wh_curr.func || !wh_curr.parallel || wh_curr.priority !== wh.priority) {
+        break;
+      }
+
+      arr.push(wh_curr);
+    }
+
+    // skip all forEach iterations up until the next handler
+    lastIdx = j;
+
+    p = p.then(function () {
+      return self.__p.all(arr.map(function (wh) {
+        return wrapHandler(wh);
+      }));
+    });
   });
 
   // We combined full chain of calls, now restore

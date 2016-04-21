@@ -339,6 +339,103 @@ describe('Wire', function () {
   });
 
 
+  it('`parallel` option', function (done) {
+    var w = ew(ew_opts),
+        data = [];
+
+    function handler(name) {
+      return function (__, cb) {
+        data.push(name + ' start');
+
+        setTimeout(function () {
+          data.push(name + ' end');
+          cb();
+        }, 1);
+      };
+    }
+
+    w.on('test', { priority: 9, parallel: true }, handler('h0'));
+    w.on('test', { priority: 10, parallel: true }, handler('h1'));
+    w.on('test', { priority: 10 }, handler('h2'));
+    w.on('test', { priority: 10, parallel: true }, handler('h3parr'));
+    w.on('test', { priority: 10, parallel: true }, handler('h4parr'));
+    w.on('test', { priority: 11, parallel: true }, handler('h5'));
+
+    w.emit('test', data, function (err) {
+      assert.deepEqual(data, [
+        'h0 start',
+        'h0 end',
+        'h1 start',
+        'h1 end',
+        'h2 start',
+        'h2 end',
+        'h3parr start',
+        'h4parr start',
+        'h3parr end',
+        'h4parr end',
+        'h5 start',
+        'h5 end'
+      ]);
+      done(err);
+    });
+  });
+
+
+  it('`parallel` + error', function (done) {
+    var w = ew(ew_opts),
+        data = [];
+
+    w.on('test', { priority: 10, parallel: true }, function h0(__, cb) {
+      data.push('h0 start');
+
+      setTimeout(function () {
+        data.push('h0 end');
+        cb();
+      }, 1);
+    });
+
+    w.on('test', { priority: 10, parallel: true }, function h1(__, cb) {
+      data.push('h1 start');
+
+      setTimeout(function () {
+        data.push('h1 end');
+        cb(new Error('test'));
+      }, 1);
+    });
+
+    w.on('test', { priority: 10, parallel: true }, function h2(__, cb) {
+      data.push('h2 start');
+
+      setTimeout(function () {
+        data.push('h2 end');
+        cb();
+      }, 1);
+    });
+
+    w.on('test', { priority: 11, parallel: true }, function h3(__, cb) {
+      data.push('h3 start');
+
+      setTimeout(function () {
+        data.push('h3 end');
+        cb();
+      }, 1);
+    });
+
+    w.emit('test', data, function (err) {
+      assert.strictEqual(err.message, 'test');
+      assert.deepEqual(data, [
+        'h0 start',
+        'h1 start',
+        'h2 start',
+        'h0 end',
+        'h1 end',
+        'h2 end'
+      ]);
+      done();
+    });
+  });
+
+
   it('async + data', function (done) {
     var w = ew(ew_opts),
         data = {};

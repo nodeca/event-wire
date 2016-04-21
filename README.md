@@ -102,6 +102,20 @@ Options:
   Handlers with equal priorities are executed in definition order.
 - `ensure` (Boolean, Default: false) - If `true`, will run handler even
   if one of previous fired error.
+- `parallel` (Boolean, Default: false) - all adjacent handlers with the same
+  priority that also have `parallel=true` will be executed in parallel.
+
+  For example:
+
+  ```js
+  wire.on('foobar', { priority: 9, parallel: true }, handler1); // different priority
+  wire.on('foobar', { priority: 10, parallel: true }, handler2); // handler2 and handler3 are parallel
+  wire.on('foobar', { priority: 10, parallel: true }, handler3); // handler2 and handler3 are parallel
+  wire.on('foobar', { priority: 10 }, handler4); // not parallel
+  wire.on('foobar', { priority: 10, parallel: true }, handler5); // handler5 and handler6 are parallel
+  wire.on('foobar', { priority: 10, parallel: true }, handler6); // handler5 and handler6 are parallel
+  wire.on('foobar', { priority: 11, parallel: true }, handler7); // different priority
+  ```
 - `name` (String) - handler name, if function is anonimous or you need to
   guarantee it intat after code uglifiers.
 
