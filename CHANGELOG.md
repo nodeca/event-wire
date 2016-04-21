@@ -1,3 +1,9 @@
+3.2.0 / 2016-04-21
+------------------
+
+- Added support for concurrent handler execution.
+
+
 3.1.1 / 2016-03-24
 ------------------
 
