@@ -497,6 +497,12 @@ describe('Wire', function () {
       });
     });
 
+    it('bad handler', function () {
+      var w = ew(ew_opts);
+
+      assert.throws(function () { w.on('test', []); });
+    });
+
 
     it('bad channel name (configure)', function () {
       var w = ew(ew_opts);
