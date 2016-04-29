@@ -412,8 +412,8 @@ Wire.prototype.on = function (channels, options, handler) {
 
   options = options || {};
 
-  if (!isFunction(handler)) {
-    throw new Error('Listener should be the function');
+  if (!isFunction(handler) && !isGeneratorFunction(handler)) {
+    throw new Error('Listener should be the function or generator function');
   }
 
   if (handler.length !== 0 && handler.length !== 1 && handler.length !== 2) {
