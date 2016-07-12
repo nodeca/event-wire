@@ -77,11 +77,6 @@ wire.on('foobar', function (obj) {
   // do stuff here
 });
 
-wire.on('foobar', function (callback) {
-  // do stuff here
-  callback();
-});
-
 wire.on('foobar', function (obj, callback) {
   // do stuff here
   callback();
