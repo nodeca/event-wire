@@ -471,6 +471,24 @@ describe('Wire', function () {
   });
 
 
+  it('async + `.off()` race condition', function (done) {
+    var w = ew();
+
+    function h2() {
+    }
+
+    function h1(__, callback) {
+      w.off('test', h2);
+      setTimeout(callback, 1);
+    }
+
+    w.on('test', h1);
+    w.on('test', h2);
+
+    w.emit('test', done);
+  });
+
+
   describe('errors', function () {
 
     it('bad priority', function () {

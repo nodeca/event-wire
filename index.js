@@ -219,6 +219,9 @@ Wire.prototype.__emitOne = function (ch, params) {
     var fn = wh.func;
     var p = self.__p.resolve();
 
+    // Check if handler removed (null)
+    if (!fn) return;
+
     if (wh.once) { self.off(wh.channel, fn); }
 
     if (wh.gen) {
