@@ -13,7 +13,7 @@ listeners.
 
 Features:
 
-- sync, async & generator listeners
+- sync, async, promise-based & generator listeners
 - wildards
 - exclusions
 
@@ -32,12 +32,18 @@ npm install event-wire --save
 Create new `event-wire` instanse.
 
 ```js
+//
+// Simple. Ok for browser.
+//
 var wire = require('event-wire')();
 
-// With alternate libs
-var wire = require('event-wire')({
-  co: require('bluebird-co'),
-  p: require('bluebird')
+//
+// Advanced, with alternate libs (more deps, but faster)
+//
+const bb   = require('bluebird');
+const wire = require('event-wire')({
+  p: bb,
+  co: (fn, params) => bb.coroutine(fn)(params)
 });
 ```
 
@@ -59,15 +65,12 @@ or a sequence of channels stored in `channels` parameter. Handler can be
 either sync, async or generator function:
 
 ```js
-wire.on('foobar', function () {
-  return new Error('test'); // You can return error
+wire.on('foobar', function* (obj) {
+  // do stuff here
+  yield ...
 });
 
-wire.on('foobar', function () {
-  throw new Error('test'); // You can throw error
-});
-
-wire.on('foobar', function () {
+wire.on('foobar', function (/* obj */) {
   return new Promise(resolve => { // You can return Promise
     setTimeout(() => { resolve(); }, 1000);
   });
@@ -75,23 +78,21 @@ wire.on('foobar', function () {
 
 wire.on('foobar', function (obj) {
   // do stuff here
+
+  // and you can generate error via throw
+  throw new Error('test');
 });
 
 wire.on('foobar', function (obj, callback) {
   // do stuff here
   callback();
 });
-
-wire.on('foobar', function* (obj) {
-  // do stuff here
-  yield ...
-});
 ```
 
-Each handler can termitate chain execution by returning not falsy
-result (error). Also handker can throw and return `Promise`.
+If handler returns error, chain will be terminated - all next handlers
+except "ensured" (see below) will be skipped.
 
-Options:
+__options__:
 
 - `priority` (Number, Default: 0) - execution order (lower is earlier).
   Handlers with equal priorities are executed in definition order.
@@ -111,8 +112,8 @@ Options:
   wire.on('foobar', { priority: 10, parallel: true }, handler6); // handler5 and handler6 are parallel
   wire.on('foobar', { priority: 11, parallel: true }, handler7); // different priority
   ```
-- `name` (String) - handler name, if function is anonimous or you need to
-  guarantee it intat after code uglifiers.
+- `name` (String) - handler name, if function is anonymous or you need to
+  keept it intact after code uglifiers.
 
 
 ### .once(...)
