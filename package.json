@@ -19,12 +19,12 @@
   ],
   "dependencies": {
     "co": "^4.6.0",
-    "next-tick": "^0.2.2"
+    "next-tick": "^1.0.0"
   },
   "devDependencies": {
     "bluebird": "^3.3.4",
     "coveralls": "~2.11.2",
-    "eslint": "~2.4.0",
+    "eslint": "^3.12.2",
     "istanbul": "*",
     "mocha": "*"
   }
