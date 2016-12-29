@@ -1,8 +1,8 @@
-3.3.0 / WIP
+3.3.0 / 2016-12-29
 ------------------
 
 - Deps bump.
-- Code refacroting.
+- Code refactoring.
 - Don't use `bluebird-co` anymore.
 
 
