@@ -1,8 +1,13 @@
 env:
   node:     true
-  browser:  false
-  # Postponed: enable partially (less on server, more on client)
-  es6: true
+  browser:  true
+
+parserOptions:
+  ecmaVersion: 5
+
+globals:
+  Promise:  true
+
 
 rules:
   accessor-pairs:         2
