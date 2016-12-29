@@ -6,12 +6,13 @@
 var assert = require('assert');
 var ew     = require('../');
 
-require('bluebird-co');
+var bb     = require('bluebird');
 
 var ew_opts = {
-  p:  require('bluebird'),
-  co: require('bluebird-co').co
+  p: bb,
+  co: function (fn, params) { return bb.coroutine(fn)(params); }
 };
+
 
 describe('Wire', function () {
 
@@ -110,14 +111,28 @@ describe('Wire', function () {
     var w = ew(ew_opts),
         data = [];
 
-    w.once('test.*', function h1() { data.push(1); });
-    w.once('test.1', null, function h2() { data.push(2); });
+    w.once('test.*', function h_sync() {
+      data.push(1);
+    });
+
+    w.once('test.*', function h_async(__, cb) {
+      data.push(2);
+      cb();
+    });
+
+    w.once('test.*', function* h_gen() {
+      data.push(3);
+    });
+
+    w.once('test.1', null, function h_end() {
+      data.push(4);
+    });
 
     w.emit('test.1', function (e) {
       assert.ifError(e);
       w.emit('test.1', function (err) {
         assert.ifError(err);
-        assert.deepEqual(data, [ 1, 2 ]);
+        assert.deepEqual(data, [ 1, 2, 3, 4 ]);
         done();
       });
     });
@@ -476,6 +491,24 @@ describe('Wire', function () {
   });
 
 
+  it('async + `.off()` race condition', function (done) {
+    var w = ew();
+
+    function h2() {
+    }
+
+    function h1(__, callback) {
+      w.off('test', h2);
+      setTimeout(callback, 1);
+    }
+
+    w.on('test', h1);
+    w.on('test', h2);
+
+    w.emit('test', done);
+  });
+
+
   describe('errors', function () {
 
     it('bad priority', function () {
@@ -500,6 +533,12 @@ describe('Wire', function () {
         /*eslint-disable no-unused-vars*/
         w.on('test', function (a, b, c, d) {});
       });
+    });
+
+    it('bad handler', function () {
+      var w = ew(ew_opts);
+
+      assert.throws(function () { w.on('test', []); });
     });
 
 

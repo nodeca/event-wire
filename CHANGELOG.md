@@ -1,3 +1,10 @@
+3.3.0 / WIP
+------------------
+
+- Code refacroting.
+- Don't use `bluebird-co` anymore.
+
+
 3.2.2 / 2016-07-12
 ------------------
 
