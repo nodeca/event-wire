@@ -256,11 +256,8 @@ function runHandler_cb(slf, hInfo, params, hasError) {
 
     return new slf.__p(function (resolve, reject) {
       fn(params, function (err) {
-        if (!err) {
-          resolve();
-        } else {
-          reject(err);
-        }
+        if (!err) resolve();
+        else reject(err);
       });
     });
   });
@@ -309,7 +306,6 @@ Wire.prototype.__emit = function (ch, params) {
 
   handlers.forEach(function (hInfo, i) {
     if (i < lastIdx) return;
-
     if (!hInfo.func) return;
 
     if (!hInfo.parallel) {
@@ -326,9 +322,7 @@ Wire.prototype.__emit = function (ch, params) {
     for (j = i + 1; j < handlers.length; j++) {
       var h = handlers[j];
 
-      if (!h.func || !h.parallel || h.priority !== hInfo.priority) {
-        break;
-      }
+      if (!h.func || !h.parallel || h.priority !== hInfo.priority) break;
 
       arr.push(h);
     }
@@ -397,7 +391,15 @@ Wire.prototype.emit = function (channel, params, callback) {
  *
  *  Registers `handler` to be executed upon messages in the a single channel
  *  or a sequence of channels stored in `channels` parameter. Handler can be
- *  either sync function:
+ *  generator, sync or async function:
+ *
+ *      wire.on('foobar', function* () {
+ *        // do stuff here
+ *      });
+ *
+ *      wire.on('foobar', function* (params) {
+ *        // do stuff here
+ *      });
  *
  *      wire.on('foobar', function () {
  *        // do stuff here
@@ -406,8 +408,6 @@ Wire.prototype.emit = function (channel, params, callback) {
  *      wire.on('foobar', function (params) {
  *        // do stuff here
  *      });
- *
- *  Or it might be an async function with `callback(err)` second argument:
  *
  *      wire.on('foobar', function (params, callback) {
  *        // do stuff here
@@ -543,18 +543,11 @@ Wire.prototype.after = function (channel, options, handler) {
 Wire.prototype.off = function (channel, handler) {
 
   this.__handlers.forEach(function (hInfo) {
-    if (channel !== hInfo.channel) {
-      return; // continue
-    }
-
-    if (handler && (handler !== hInfo.func)) {
-      return; // continue
-    }
+    if (channel !== hInfo.channel) return; // continue
+    if (handler && (handler !== hInfo.func)) return; // continue
 
     // Uncount back zero-priority handler
-    if (hInfo.priority === 0) {
-      this.__knownChannels[channel]--;
-    }
+    if (hInfo.priority === 0) this.__knownChannels[channel]--;
 
     hInfo.func = null;
   }, this);
