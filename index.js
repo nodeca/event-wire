@@ -87,7 +87,6 @@ function isPromise(obj) {
 
 //////////////////////////////////////////////////////////////////////////////
 
-
 // Structure to hold handler data
 function HandlerInfo(channel, options, func) {
   if (channel.indexOf('*') !== -1 &&
@@ -112,6 +111,9 @@ function HandlerInfo(channel, options, func) {
 
   // Used to match this handler.
   this.lookupString = this.isBroadcast ? channel.slice(0, -1) : channel;
+
+  // Wrapper cache for unified handler call
+  this.func_wrapped = null;
 }
 
 
@@ -203,64 +205,30 @@ function _hook(slf, name, handlerInfo, params) {
 }
 
 
-// Run generator handler
-function runHandler_gen(slf, hInfo, params, hasError) {
-  var fn = hInfo.func;
-
-  if (hInfo.once) { slf.off(hInfo.channel, fn); }
-
-  return slf.__p.resolve().then(function () {
-    if (hasError && !hInfo.ensure) return null;
-    hInfo.ncalled++;
-    _hook(slf, 'eachBefore', hInfo, params);
-
-    return slf.__co(fn, params);
-  });
+// Wrap generator handler
+function wrap_gen(fn, co) {
+  return function (params) { return co(fn, params); };
 }
 
-
-// Run sync function handler, it can:
+// Wrap sync function handler, it can:
 // - return nothing
 // - throw
 // - return Promise.
-function runHandler_sync(slf, hInfo, params, hasError) {
-  var fn = hInfo.func;
-
-  if (hInfo.once) { slf.off(hInfo.channel, fn); }
-
-  return slf.__p.resolve().then(function () {
-    if (hasError && !hInfo.ensure) return null;
-    hInfo.ncalled++;
-    _hook(slf, 'eachBefore', hInfo, params);
-
+function wrap_sync(fn) {
+  return function (params) {
     var val = fn(params);
-
-    if (val) {
-      if (isPromise(val)) return val;
-      throw val;
-    }
-  });
+    if (val && !isPromise(val)) throw val;
+    return val;
+  };
 }
 
-
-// Run handler with callback
-function runHandler_cb(slf, hInfo, params, hasError) {
-  var fn = hInfo.func;
-
-  if (hInfo.once) { slf.off(hInfo.channel, fn); }
-
-  return slf.__p.resolve().then(function () {
-    if (hasError && !hInfo.ensure) return null;
-    hInfo.ncalled++;
-    _hook(slf, 'eachBefore', hInfo, params);
-
-    return new slf.__p(function (resolve, reject) {
-      fn(params, function (err) {
-        if (!err) resolve();
-        else reject(err);
-      });
+// Wrap handler with callback
+function wrap_cb(fn, P) {
+  return function (params) {
+    return new P(function (resolve, reject) {
+      fn(params, function (err) { return !err ? resolve() : reject(err); });
     });
-  });
+  };
 }
 
 
@@ -268,9 +236,31 @@ function runHandler(slf, hInfo, params, hasError) {
   // Check if handler removed (null)
   if (!hInfo.func) return;
 
-  if (hInfo.gen) return runHandler_gen(slf, hInfo, params, hasError);
-  if (hInfo.sync) return runHandler_sync(slf, hInfo, params, hasError);
-  return runHandler_cb(slf, hInfo, params, hasError);
+  // Lazy wrapper init
+  if (!hInfo.func_wrapped) {
+    if (hInfo.gen) {
+      hInfo.func_wrapped = wrap_gen(hInfo.func, slf.__co);
+    } else if (hInfo.sync) {
+      hInfo.func_wrapped = wrap_sync(hInfo.func);
+    } else {
+      hInfo.func_wrapped = wrap_cb(hInfo.func, slf.__p);
+    }
+  }
+
+  if (hInfo.once) { slf.off(hInfo.channel, hInfo.func); }
+
+  return slf.__p.resolve().then(function () {
+    if (hasError && !hInfo.ensure) return null;
+    hInfo.ncalled++;
+    _hook(slf, 'eachBefore', hInfo, params);
+
+    var func_wrapped = hInfo.func_wrapped;
+
+    // ref cleanup
+    if (!hInfo.func) hInfo.func_wrapped = null;
+
+    return func_wrapped(params);
+  });
 }
 
 
