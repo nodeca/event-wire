@@ -89,7 +89,7 @@ function isPromise(obj) {
 
 
 // Structure to hold handler data
-function WireHandler(channel, options, func) {
+function HandlerInfo(channel, options, func) {
   if (channel.indexOf('*') !== -1 &&
       channel.indexOf('*') !== channel.length - 1) {
     throw new Error("Bad channel name '" + channel + "'. Broadcast symbol (*) must " +
@@ -119,7 +119,7 @@ function WireHandler(channel, options, func) {
 
 
 function Wire(options) {
-  if (!(this instanceof Wire)) { return new Wire(options); }
+  if (!(this instanceof Wire)) return new Wire(options);
 
   var opts = options || {};
 
@@ -149,9 +149,10 @@ Wire.prototype.__checkSkip = function (handlerName, channelName) {
   return !!(this.__skips[handlerName] || []).some(function (skip) {
     var wcard = skip.charAt(skip.length - 1) === '*';
 
-    if (!wcard && skip === channelName) { return true; }
+    if (!wcard && skip === channelName) return true;
+    if (wcard && (channelName.indexOf(skip.slice(0, -1)) === 0)) return true;
 
-    if (wcard && (channelName.indexOf(skip.slice(0, -1)) === 0)) { return true; }
+    return false;
   });
 };
 
@@ -194,7 +195,7 @@ Wire.prototype.__getHandlers = function (channel) {
 // Helper to run hooks
 //
 function _hook(slf, name, handlerInfo, params) {
-  if (!slf.__hooks[name]) { return; }
+  if (!slf.__hooks[name]) return;
 
   slf.__hooks[name].forEach(function (hook) {
     hook(handlerInfo, params);
@@ -202,118 +203,142 @@ function _hook(slf, name, handlerInfo, params) {
 }
 
 
+// Run generator handler
+function runHandler_gen(slf, hInfo, params, hasError) {
+  var fn = hInfo.func;
+
+  if (hInfo.once) { slf.off(hInfo.channel, fn); }
+
+  return slf.__p.resolve().then(function () {
+    if (hasError && !hInfo.ensure) return null;
+    hInfo.ncalled++;
+    _hook(slf, 'eachBefore', hInfo, params);
+
+    return slf.__co(fn, params);
+  });
+}
+
+
+// Run sync function handler, it can:
+// - return nothing
+// - throw
+// - return Promise.
+function runHandler_sync(slf, hInfo, params, hasError) {
+  var fn = hInfo.func;
+
+  if (hInfo.once) { slf.off(hInfo.channel, fn); }
+
+  return slf.__p.resolve().then(function () {
+    if (hasError && !hInfo.ensure) return null;
+    hInfo.ncalled++;
+    _hook(slf, 'eachBefore', hInfo, params);
+
+    var val = fn(params);
+
+    if (val) {
+      if (isPromise(val)) return val;
+      throw val;
+    }
+  });
+}
+
+
+// Run handler with callback
+function runHandler_cb(slf, hInfo, params, hasError) {
+  var fn = hInfo.func;
+
+  if (hInfo.once) { slf.off(hInfo.channel, fn); }
+
+  return slf.__p.resolve().then(function () {
+    if (hasError && !hInfo.ensure) return null;
+    hInfo.ncalled++;
+    _hook(slf, 'eachBefore', hInfo, params);
+
+    return new slf.__p(function (resolve, reject) {
+      fn(params, function (err) {
+        if (!err) {
+          resolve();
+        } else {
+          reject(err);
+        }
+      });
+    });
+  });
+}
+
+
+function runHandler(slf, hInfo, params, hasError) {
+  // Check if handler removed (null)
+  if (!hInfo.func) return;
+
+  if (hInfo.gen) return runHandler_gen(slf, hInfo, params, hasError);
+  if (hInfo.sync) return runHandler_sync(slf, hInfo, params, hasError);
+  return runHandler_cb(slf, hInfo, params, hasError);
+}
+
+
 // Run all listeners for specific channel
 //
-Wire.prototype.__emitOne = function (ch, params) {
+Wire.prototype.__emit = function (ch, params) {
   var p = this.__p.resolve(),
       self = this,
       errored = false, err;
 
   function storeErrOnce(e) {
-    if (errored) { return; }
+    if (errored) return;
     errored = true;
     err = e;
   }
 
-  function wrapHandler(wh) {
-    var fn = wh.func;
-    var p = self.__p.resolve();
+  // Finalize handler exec - should care about errors and post-hooks.
+  function finalizeHandler(p, hInfo) {
+    if (!p) return;
 
-    // Check if handler removed (null)
-    if (!fn) return;
-
-    if (wh.once) { self.off(wh.channel, fn); }
-
-    if (wh.gen) {
-      // Handler is generator
-      p = p.then(function () {
-        if (errored && !wh.ensure) { return null; }
-        wh.ncalled++;
-        _hook(self, 'eachBefore', wh, params);
-
-        return self.__co(fn, params);
-      });
-
-    } else if (wh.sync) {
-      // Handler is sync function, but can
-      // throw, return error or Promise.
-      p = p.then(function () {
-        if (errored && !wh.ensure) { return null; }
-        wh.ncalled++;
-        _hook(self, 'eachBefore', wh, params);
-
-        var val = fn(params);
-
-        if (val) {
-          if (isPromise(val)) { return val; }
-          throw val;
-        }
-      });
-    } else {
-      // Handler is async function
-      p = p.then(function () {
-        if (errored && !wh.ensure) { return null; }
-        wh.ncalled++;
-        _hook(self, 'eachBefore', wh, params);
-
-        return new self.__p(function (resolve, reject) {
-          fn(params, function (err) {
-            if (!err) {
-              resolve();
-            } else {
-              reject(err);
-            }
-          });
-        });
-      });
-    }
-
-    // Finalize handler exec - should care about errors and post-hooks.
-    p = p.catch(storeErrOnce)
-         .then(function () {
-           if (errored && !wh.ensure) { return null; }
-           _hook(self, 'eachAfter', wh, params);
-         })
-         .catch(storeErrOnce);
-
-    return p;
+    return p
+      .catch(storeErrOnce)
+      .then(function () {
+        if (errored && !hInfo.ensure) return null;
+        _hook(self, 'eachAfter', hInfo, params);
+      })
+      .catch(storeErrOnce);
   }
+
 
   var handlers = this.__getHandlers(ch).slice();
   var lastIdx = 0;
 
-  handlers.forEach(function (wh, i) {
+  handlers.forEach(function (hInfo, i) {
     if (i < lastIdx) return;
 
-    if (!wh.func) return;
+    if (!hInfo.func) return;
 
-    if (!wh.parallel) {
+    if (!hInfo.parallel) {
       p = p.then(function () {
-        return wrapHandler(wh);
+        return finalizeHandler(runHandler(self, hInfo, params, errored), hInfo);
       });
 
       return;
     }
 
-    var arr = [ wh ];
+    var arr = [ hInfo ];
     var j;
 
     for (j = i + 1; j < handlers.length; j++) {
-      var wh_curr = handlers[j];
+      var h = handlers[j];
 
-      if (!wh_curr.func || !wh_curr.parallel || wh_curr.priority !== wh.priority) {
+      if (!h.func || !h.parallel || h.priority !== hInfo.priority) {
         break;
       }
 
-      arr.push(wh_curr);
+      arr.push(h);
     }
 
     // skip all forEach iterations up until the next handler
     lastIdx = j;
 
     p = p.then(function () {
-      return self.__p.all(arr.map(function (wh) {
-        return wrapHandler(wh);
+      return self.__p.all(arr.map(function (hInfo) {
+        return finalizeHandler(runHandler(self, hInfo, params, errored), hInfo);
       }));
     });
   });
@@ -324,6 +349,20 @@ Wire.prototype.__emitOne = function (ch, params) {
     if (errored) { throw err; }
   });
 };
+
+
+Wire.prototype.__emit_with_check = function (channel, params) {
+  if (!isString(channel)) {
+    return this.__p.reject(new Error('Channel name should be a string: ' + channel));
+  }
+
+  if (channel.indexOf('*') >= 0) {
+    return this.__p.reject(new Error("Bad channel name '" + channel + "'. Wildard `*` not allowed in emitter"));
+  }
+
+  return this.__emit(channel, params);
+};
+
 
 /**
  *  Wire#emit(channels [, params, callback]) -> Void
@@ -340,30 +379,13 @@ Wire.prototype.emit = function (channel, params, callback) {
     params = null;
   }
 
-  var p = this.__p.resolve();
-
-  if (!isString(channel)) {
-    p = p.then(function () {
-      throw new Error('Channel name should be a string: ' + channel);
-    });
-  }
-  if (channel.indexOf('*') >= 0) {
-    p = p.then(function () {
-      throw new Error("Bad channel name '" + channel + "'. Wildard `*` not allowed in emitter");
-    });
-  }
-
-  var self = this;
-  p = p.then(function () { return self.__emitOne(channel, params); });
-
   // No callback - return promise
-  if (!callback) {
-    return p;
-  }
+  if (!callback) return this.__emit_with_check(channel, params);
 
   // Callback magic
-  p.then(function () { nextTick(callback.bind(null)); })
-   .catch(function (err) { nextTick(callback.bind(null, err)); });
+  this.__emit_with_check(channel, params)
+     .then(function () { nextTick(callback.bind(null)); })
+     .catch(function (err) { nextTick(callback.bind(null, err)); });
 };
 
 
@@ -424,14 +446,14 @@ Wire.prototype.on = function (channels, options, handler) {
   }
 
   channels.forEach(function (channelName) {
-    var wh = new WireHandler(channelName, options, handler);
+    var hInfo = new HandlerInfo(channelName, options, handler);
 
     // Count main channel handler (no wildcards, zero-priority)
-    if (wh.priority === 0) {
+    if (hInfo.priority === 0) {
       this.__knownChannels[channelName] = (this.__knownChannels[channelName] || 0) + 1;
     }
 
-    this.__handlers.push(wh);
+    this.__handlers.push(hInfo);
   }, this);
 
   // TODO: Move to separate method
@@ -520,21 +542,21 @@ Wire.prototype.after = function (channel, options, handler) {
  **/
 Wire.prototype.off = function (channel, handler) {
 
-  this.__handlers.forEach(function (wh) {
-    if (channel !== wh.channel) {
+  this.__handlers.forEach(function (hInfo) {
+    if (channel !== hInfo.channel) {
       return; // continue
     }
 
-    if (handler && (handler !== wh.func)) {
+    if (handler && (handler !== hInfo.func)) {
       return; // continue
     }
 
     // Uncount back zero-priority handler
-    if (wh.priority === 0) {
+    if (hInfo.priority === 0) {
       this.__knownChannels[channel]--;
     }
 
-    wh.func = null;
+    hInfo.func = null;
   }, this);
 };
 
@@ -609,9 +631,9 @@ Wire.prototype.stat = function () {
       known = [];
 
   // Scan all unique channels, ignore priorities
-  this.__handlers.forEach(function (wh) {
-    if (known.indexOf(wh.channel) === -1) {
-      known.push(wh.channel);
+  this.__handlers.forEach(function (hInfo) {
+    if (known.indexOf(hInfo.channel) === -1) {
+      known.push(hInfo.channel);
     }
   });
   known = known.sort();

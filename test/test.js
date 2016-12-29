@@ -105,14 +105,28 @@ describe('Wire', function () {
     var w = ew(ew_opts),
         data = [];
 
-    w.once('test.*', function h1() { data.push(1); });
-    w.once('test.1', null, function h2() { data.push(2); });
+    w.once('test.*', function h_sync() {
+      data.push(1);
+    });
+
+    w.once('test.*', function h_async(__, cb) {
+      data.push(2);
+      cb();
+    });
+
+    w.once('test.*', function* h_gen() {
+      data.push(3);
+    });
+
+    w.once('test.1', null, function h_end() {
+      data.push(4);
+    });
 
     w.emit('test.1', function (e) {
       assert.ifError(e);
       w.emit('test.1', function (err) {
         assert.ifError(err);
-        assert.deepEqual(data, [ 1, 2 ]);
+        assert.deepEqual(data, [ 1, 2, 3, 4 ]);
         done();
       });
     });
