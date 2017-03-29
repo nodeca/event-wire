@@ -710,6 +710,108 @@ describe('Wire', function () {
   });
 
 
+  describe('Async/Await', function () {
+    it('.on', function (done) {
+      var w = ew(ew_opts),
+          data = [],
+          i = 5;
+
+      function defer(timeout) {
+        return new Promise(function (resolve) {
+          setTimeout(function () { resolve(i++); }, timeout);
+        });
+      }
+
+      w.on('test', function h1(d, next) {
+        d.push(1);
+        next();
+      });
+
+      w.on('test', async function h2(d) {
+        d.push(await defer(50));
+        d.push(await defer(10));
+        d.push(await defer(5));
+      });
+
+      w.emit('test', data, function (err) {
+        assert.deepEqual(data, [ 1, 5, 6, 7 ]);
+        done(err);
+      });
+    });
+
+
+    it('throw', function (done) {
+      var w = ew(ew_opts);
+
+      w.on('test', async function (d) {
+        throw 'test';
+      });
+
+      w.emit('test', function (err) {
+        assert.strictEqual(err, 'test');
+        done();
+      });
+    });
+
+
+    it('throw after await', function (done) {
+      var w = ew(ew_opts);
+
+      function defer() {
+        return new Promise(function (resolve) {
+          setTimeout(function () { resolve(1); }, 50);
+        });
+      }
+
+      w.on('test', async function (d) {
+        await defer();
+        throw 'test';
+      });
+
+      w.emit('test', function (err) {
+        assert.strictEqual(err, 'test');
+        done();
+      });
+    });
+
+
+    it('promise resolved', function (done) {
+      var w = ew(ew_opts);
+
+      function defer() {
+        return new Promise(function (resolve) {
+          setTimeout(function () { resolve(1); }, 50);
+        });
+      }
+
+      w.on('test', async function (d) {
+        await defer();
+      });
+
+      w.emit('test')
+        .then(function () {
+          done();
+        })
+        .catch(done);
+    });
+
+
+    it('promise rejected', function (done) {
+      var w = ew(ew_opts);
+
+      w.on('test', async function (d) {
+        throw 'test';
+      });
+
+      w.emit('test')
+        .catch(function (err) {
+          assert.strictEqual(err, 'test');
+          done();
+        });
+    });
+  });
+
+
   describe('.hook', function () {
 
     it('eachBefore and eachAfter with async', function () {

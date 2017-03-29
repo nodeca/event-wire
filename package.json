@@ -25,9 +25,9 @@
     "next-tick": "^1.0.0"
   },
   "devDependencies": {
-    "bluebird": "^3.3.4",
-    "coveralls": "~2.11.2",
-    "eslint": "^3.12.2",
+    "bluebird": "^3.5.0",
+    "coveralls": "~2.11.16",
+    "eslint": "^3.18.0",
     "istanbul": "*",
     "mocha": "*"
   }

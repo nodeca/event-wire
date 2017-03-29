@@ -80,6 +80,20 @@ function isGeneratorFunction(obj) {
 }
 
 
+function isAsyncFunction(obj) {
+  var constructor = obj.constructor;
+  /*istanbul ignore if*/
+  if (!constructor) {
+    return false;
+  }
+  if (constructor.name === 'AsyncFunction' ||
+      constructor.displayName === 'AsyncFunction') {
+    return true;
+  }
+  return false;
+}
+
+
 function isPromise(obj) {
   return typeof obj.then === 'function';
 }
@@ -99,6 +113,7 @@ function HandlerInfo(channel, options, func) {
   this.func      = func;
   this.name      = func.name || options.name || '<anonymous>';
   this.gen       = isGeneratorFunction(func);
+  this.async     = isAsyncFunction(func);
   this.sync      = func.length === 0 || func.length === 1;
   this.once      = Boolean(options.once);
   this.ensure    = Boolean(options.ensure);
@@ -210,6 +225,11 @@ function wrap_gen(fn, co) {
   return function (params) { return co(fn, params); };
 }
 
+function wrap_async(fn) {
+  return fn; // No wrapper needed
+}
+
+
 // Wrap sync function handler, it can:
 // - return nothing
 // - throw
@@ -240,6 +260,8 @@ function runHandler(slf, hInfo, params, hasError) {
   if (!hInfo.func_wrapped) {
     if (hInfo.gen) {
       hInfo.func_wrapped = wrap_gen(hInfo.func, slf.__co);
+    } else if (hInfo.async) {
+      hInfo.func_wrapped = wrap_async(hInfo.func);
     } else if (hInfo.sync) {
       hInfo.func_wrapped = wrap_sync(hInfo.func);
     } else {
@@ -427,8 +449,10 @@ Wire.prototype.on = function (channels, options, handler) {
 
   options = options || {};
 
-  if (!isFunction(handler) && !isGeneratorFunction(handler)) {
-    throw new Error('Listener should be the function or generator function');
+  if (!isFunction(handler) &&
+      !isGeneratorFunction(handler) &&
+      !isAsyncFunction(handler)) {
+    throw new Error('Listener should be the function, generator function or async function');
   }
 
   if (handler.length !== 0 && handler.length !== 1 && handler.length !== 2) {

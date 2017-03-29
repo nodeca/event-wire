@@ -2,4 +2,4 @@ env:
   mocha: true
 
 parserOptions:
-  ecmaVersion: 6
+  ecmaVersion: '2017'
