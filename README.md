@@ -1,5 +1,7 @@
 # event-wire
 
+[![Greenkeeper badge](https://badges.greenkeeper.io/nodeca/event-wire.svg)](https://greenkeeper.io/)
+
 [![Build Status](https://img.shields.io/travis/nodeca/event-wire/master.svg?style=flat)](https://travis-ci.org/nodeca/event-wire)
 [![NPM version](https://img.shields.io/npm/v/event-wire.svg?style=flat)](https://www.npmjs.org/package/event-wire)
 [![Coverage Status](https://img.shields.io/coveralls/nodeca/event-wire/master.svg?style=flat)](https://coveralls.io/r/nodeca/event-wire?branch=master)
