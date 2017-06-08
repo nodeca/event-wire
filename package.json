@@ -26,7 +26,7 @@
   },
   "devDependencies": {
     "bluebird": "^3.5.0",
-    "coveralls": "~2.11.16",
+    "coveralls": "~2.13.1",
     "eslint": "^3.18.0",
     "istanbul": "*",
     "mocha": "*"
