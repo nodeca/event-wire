@@ -31,7 +31,7 @@ describe('Wire', function () {
 
     w.emit('test', function (err) {
       assert.ifError(err);
-      assert.deepEqual(data, [ 1, 2, 3 ]);
+      assert.deepStrictEqual(data, [ 1, 2, 3 ]);
       done();
     });
   });
@@ -44,22 +44,22 @@ describe('Wire', function () {
     function h2() {}
     function h3() {}
 
-    assert.equal(w.has('test'), false);
+    assert.strictEqual(w.has('test'), false);
 
     w.on('test', h1);
     w.on('test', h2);
     w.after('test', h3);
 
-    assert.equal(w.has('test'), true);
+    assert.strictEqual(w.has('test'), true);
 
     w.off('test', h2);
-    assert.equal(w.has('test'), true);
+    assert.strictEqual(w.has('test'), true);
 
     w.off('test', h3);
-    assert.equal(w.has('test'), true);
+    assert.strictEqual(w.has('test'), true);
 
     w.off('test', h1);
-    assert.equal(w.has('test'), false);
+    assert.strictEqual(w.has('test'), false);
   });
 
 
@@ -78,7 +78,7 @@ describe('Wire', function () {
 
     w.emit('test', function (err) {
       assert.ifError(err);
-      assert.deepEqual(data, [ 4, 2, 3, 5, 1 ]);
+      assert.deepStrictEqual(data, [ 4, 2, 3, 5, 1 ]);
       done();
     });
   });
@@ -99,7 +99,7 @@ describe('Wire', function () {
 
     w.emit('test', function (err) {
       assert.ifError(err);
-      assert.deepEqual(data, [ 4, 1, 3, 5, 2 ]);
+      assert.deepStrictEqual(data, [ 4, 1, 3, 5, 2 ]);
       done();
     });
   });
@@ -130,7 +130,7 @@ describe('Wire', function () {
       assert.ifError(e);
       w.emit('test.1', function (err) {
         assert.ifError(err);
-        assert.deepEqual(data, [ 1, 2, 3, 4 ]);
+        assert.deepStrictEqual(data, [ 1, 2, 3, 4 ]);
         done();
       });
     });
@@ -147,14 +147,14 @@ describe('Wire', function () {
     data = [];
     w.emit('foo.bar', function (err) {
       assert.ifError(err);
-      assert.deepEqual(data, [ 1, 2, 3 ]);
+      assert.deepStrictEqual(data, [ 1, 2, 3 ]);
 
       w.skip('foo.bar', 'foobar');
 
       data = [];
       w.emit('foo.bar', function (err) {
         assert.ifError(err);
-        assert.deepEqual(data, [ 1, 3 ]);
+        assert.deepStrictEqual(data, [ 1, 3 ]);
 
         // Second attempt doesn't change anything
         w.skip('foo.bar', 'foobar');
@@ -162,7 +162,7 @@ describe('Wire', function () {
         data = [];
         w.emit('foo.bar', function (err) {
           assert.ifError(err);
-          assert.deepEqual(data, [ 1, 3 ]);
+          assert.deepStrictEqual(data, [ 1, 3 ]);
           done();
         });
       });
@@ -183,29 +183,29 @@ describe('Wire', function () {
     data = [];
     w.emit('foo.bar', function (err) {
       assert.ifError(err);
-      assert.deepEqual(data, [ 1, 2, 3 ]);
+      assert.deepStrictEqual(data, [ 1, 2, 3 ]);
 
       data = [];
       w.emit('foo.baz', function (err) {
         assert.ifError(err);
-        assert.deepEqual(data, [ 1 ]);
+        assert.deepStrictEqual(data, [ 1 ]);
 
         w.skip('foo*', [ 'foo' ]);
 
         data = [];
         w.emit('foo.bar', function (err) {
           assert.ifError(err);
-          assert.deepEqual(data, [ 2, 3 ]);
+          assert.deepStrictEqual(data, [ 2, 3 ]);
 
           data = [];
           w.emit('foo.baz', function (err) {
             assert.ifError(err);
-            assert.deepEqual(data, []);
+            assert.deepStrictEqual(data, []);
 
             data = [];
             w.emit('baz', function (err) {
               assert.ifError(err);
-              assert.deepEqual(data, [ 4 ]);
+              assert.deepStrictEqual(data, [ 4 ]);
 
               done();
             });
@@ -219,15 +219,15 @@ describe('Wire', function () {
   it('.has', function () {
     var w = ew(ew_opts);
 
-    assert.equal(w.has('test'), false);
+    assert.strictEqual(w.has('test'), false);
 
     w.after('test', function () {});
 
-    assert.equal(w.has('test'), false);
+    assert.strictEqual(w.has('test'), false);
 
     w.on('test', function () {});
 
-    assert.equal(w.has('test'), true);
+    assert.strictEqual(w.has('test'), true);
   });
 
 
@@ -239,7 +239,7 @@ describe('Wire', function () {
     w.once('test.2', function h3() {});
     w.once('test.2', function h4() {});
 
-    assert.deepEqual(w.stat().length, 3);
+    assert.deepStrictEqual(w.stat().length, 3);
   });
 
 
@@ -253,7 +253,7 @@ describe('Wire', function () {
 
     w.emit('test', data, function (err) {
       assert.ifError(err);
-      assert.deepEqual(data, { foo: 5 });
+      assert.deepStrictEqual(data, { foo: 5 });
       done(err);
     });
   });
@@ -272,8 +272,8 @@ describe('Wire', function () {
     });
 
     w.emit('test', data, function (err) {
-      assert.equal(err.message, 'test');
-      assert.deepEqual(data, {});
+      assert.strictEqual(err.message, 'test');
+      assert.deepStrictEqual(data, {});
       done();
     });
   });
@@ -292,8 +292,8 @@ describe('Wire', function () {
     });
 
     w.emit('test', data, function (err) {
-      assert.equal(err.message, 'test');
-      assert.deepEqual(data, {});
+      assert.strictEqual(err.message, 'test');
+      assert.deepStrictEqual(data, {});
       done();
     });
   });
@@ -317,7 +317,7 @@ describe('Wire', function () {
     });
 
     w.emit('test', function () {
-      assert.deepEqual(data, [ 1, 5 ]);
+      assert.deepStrictEqual(data, [ 1, 5 ]);
       done();
     });
   });
@@ -350,8 +350,8 @@ describe('Wire', function () {
     });
 
     w.emit('test', data, function (err) {
-      assert.equal(err.message, 'test');
-      assert.deepEqual(data, { foo: 5, zab: 6 });
+      assert.strictEqual(err.message, 'test');
+      assert.deepStrictEqual(data, { foo: 5, zab: 6 });
       done();
     });
   });
@@ -380,7 +380,7 @@ describe('Wire', function () {
     w.on('test', { priority: 11, parallel: true }, handler('h5'));
 
     w.emit('test', data, function (err) {
-      assert.deepEqual(data, [
+      assert.deepStrictEqual(data, [
         'h0 start',
         'h0 end',
         'h1 start',
@@ -441,7 +441,7 @@ describe('Wire', function () {
 
     w.emit('test', data, function (err) {
       assert.strictEqual(err.message, 'test');
-      assert.deepEqual(data, [
+      assert.deepStrictEqual(data, [
         'h0 start',
         'h1 start',
         'h2 start',
@@ -464,7 +464,7 @@ describe('Wire', function () {
     });
 
     w.emit('test', data, function (err) {
-      assert.deepEqual(data, { foo: 5 });
+      assert.deepStrictEqual(data, { foo: 5 });
       done(err);
     });
   });
@@ -483,7 +483,7 @@ describe('Wire', function () {
     });
 
     w.emit('test', data, function () {
-      assert.deepEqual(data, {});
+      assert.deepStrictEqual(data, {});
       done();
     });
   });
@@ -593,13 +593,13 @@ describe('Wire', function () {
         .then(function () { return w.emit('test', undefined); })
         .then(function () { return w.emit('test', false); })
         .then(function () {
-          assert.deepEqual(log, [
-            { 0: {} },
-            { 0: [] },
-            { 0: '' },
-            { 0: null },
-            { 0: undefined },
-            { 0: false }
+          assert.deepStrictEqual(log, [
+            [ {} ],
+            [ [] ],
+            [ '' ],
+            [ null ],
+            [ undefined ],
+            [ false ]
           ]);
         });
     });
@@ -632,7 +632,7 @@ describe('Wire', function () {
       });
 
       w.emit('test', data, function (err) {
-        assert.deepEqual(data, [ 1, 5, 6, 7 ]);
+        assert.deepStrictEqual(data, [ 1, 5, 6, 7 ]);
         done(err);
       });
     });
@@ -734,7 +734,7 @@ describe('Wire', function () {
       });
 
       w.emit('test', data, function (err) {
-        assert.deepEqual(data, [ 1, 5, 6, 7 ]);
+        assert.deepStrictEqual(data, [ 1, 5, 6, 7 ]);
         done(err);
       });
     });
@@ -838,8 +838,8 @@ describe('Wire', function () {
       });
 
       w.emit('test', function () {
-        assert.deepEqual(beforeFns, [ 'beforeFn', 'onFn', 'afterFn' ]);
-        assert.deepEqual(afterFns, [ 'beforeFn', 'onFn', 'afterFn' ]);
+        assert.deepStrictEqual(beforeFns, [ 'beforeFn', 'onFn', 'afterFn' ]);
+        assert.deepStrictEqual(afterFns, [ 'beforeFn', 'onFn', 'afterFn' ]);
       });
     });
 
@@ -865,8 +865,8 @@ describe('Wire', function () {
       });
 
       w.emit('test', function () {
-        assert.deepEqual(beforeFns, [ 'beforeFn', 'onFn', 'afterFn' ]);
-        assert.deepEqual(afterFns, [ 'beforeFn', 'onFn', 'afterFn' ]);
+        assert.deepStrictEqual(beforeFns, [ 'beforeFn', 'onFn', 'afterFn' ]);
+        assert.deepStrictEqual(afterFns, [ 'beforeFn', 'onFn', 'afterFn' ]);
       });
     });
 
@@ -901,8 +901,8 @@ describe('Wire', function () {
       });
 
       w.emit('test', function () {
-        assert.deepEqual(beforeFns, [ 'beforeFn', 'onFn', 'afterFn' ]);
-        assert.deepEqual(afterFns, [ 'beforeFn', 'onFn', 'afterFn' ]);
+        assert.deepStrictEqual(beforeFns, [ 'beforeFn', 'onFn', 'afterFn' ]);
+        assert.deepStrictEqual(afterFns, [ 'beforeFn', 'onFn', 'afterFn' ]);
         done();
       });
     });
