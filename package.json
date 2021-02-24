@@ -12,7 +12,7 @@
   "repository": "nodeca/event-wire",
   "license": "MIT",
   "scripts": {
-    "test": "eslint . && TEST_BLUEBIRD=1 mocha --reporter=min && nyc mocha",
+    "test": "standardx -v . && TEST_BLUEBIRD=1 mocha --reporter=min && nyc mocha",
     "covreport": "nyc report --reporter html && nyc report --reporter lcov"
   },
   "files": [
@@ -24,8 +24,8 @@
   "devDependencies": {
     "bluebird": "^3.5.0",
     "co": "^4.6.0",
-    "eslint": "^7.20.0",
     "mocha": "^8.3.0",
-    "nyc": "^15.1.0"
+    "nyc": "^15.1.0",
+    "standardx": "^7.0.0"
   }
 }
