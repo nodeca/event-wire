@@ -140,7 +140,7 @@ function Wire(options) {
 
   var opts = options || {};
 
-  this.__co = opts.co || require('co');
+  this.__co = opts.co;
   this.__p = opts.p || Promise;
 
   this.__hooks          = {};

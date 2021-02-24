@@ -20,11 +20,11 @@
     "index.js"
   ],
   "dependencies": {
-    "co": "^4.6.0",
     "next-tick": "^1.0.0"
   },
   "devDependencies": {
     "bluebird": "^3.5.0",
+    "co": "^4.6.0",
     "eslint": "^7.20.0",
     "mocha": "^8.3.0",
     "nyc": "^15.1.0"

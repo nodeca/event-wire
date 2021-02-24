@@ -4,7 +4,9 @@
 var assert = require('assert');
 var ew     = require('../');
 
-var ew_opts = {};
+var ew_opts = {
+  co: require('co')
+};
 
 describe('Wire', function () {
 

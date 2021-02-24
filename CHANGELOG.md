@@ -1,3 +1,10 @@
+4.0.0 / WIP
+------------------
+
+- Drop generators support by default.
+- Deps bump.
+
+
 3.4.0 / 2017-03-29
 ------------------
 

@@ -1,6 +1,6 @@
 # event-wire
 
-[![Build Status](https://img.shields.io/travis/nodeca/event-wire/master.svg?style=flat)](https://travis-ci.org/nodeca/event-wire)
+[![CI](https://github.com/nodeca/event-wire/actions/workflows/ci.yml/badge.svg)](https://github.com/nodeca/event-wire/actions/workflows/ci.yml)
 [![NPM version](https://img.shields.io/npm/v/event-wire.svg?style=flat)](https://www.npmjs.org/package/event-wire)
 [![Coverage Status](https://img.shields.io/coveralls/nodeca/event-wire/master.svg?style=flat)](https://coveralls.io/r/nodeca/event-wire?branch=master)
 
@@ -33,12 +33,21 @@ Create new `event-wire` instanse.
 
 ```js
 //
-// Simple. Ok for browser.
+// Simple. Recommended.
 //
 var wire = require('event-wire')();
 
+
 //
-// Advanced, with alternate libs (more deps, but faster)
+// Advanced, with enabled support for generators.
+//
+const wire = require('event-wire')({
+  co: require('co')
+})
+
+
+//
+// Advanced, with alternate promise/coroutine lib
 //
 const bb   = require('bluebird');
 const wire = require('event-wire')({
@@ -46,9 +55,6 @@ const wire = require('event-wire')({
   co: (fn, params) => bb.coroutine(fn)(params)
 });
 ```
-
-Options can define alternate core libraries (co & promises).
-
 
 ### .emit(channel [, obj, callback])
 
