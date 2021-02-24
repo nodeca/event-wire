@@ -3,10 +3,19 @@
 
 var assert = require('assert');
 var ew     = require('../');
+var bb     = require('bluebird');
+
 
 var ew_opts = {
   co: require('co')
 };
+
+if (process.env.TEST_BLUEBIRD) {
+  ew_opts = {
+    p: bb,
+    co: function (fn, params) { return bb.coroutine(fn)(params); }
+  };
+}
 
 describe('Wire', function () {
 

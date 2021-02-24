@@ -12,8 +12,7 @@
   "repository": "nodeca/event-wire",
   "license": "MIT",
   "scripts": {
-    "lint": "eslint .",
-    "test": "npm run lint && nyc mocha",
+    "test": "eslint . && TEST_BLUEBIRD=1 mocha --reporter=min && nyc mocha",
     "covreport": "nyc report --reporter html && nyc report --reporter lcov"
   },
   "files": [
