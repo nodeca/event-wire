@@ -390,8 +390,8 @@ Wire.prototype.emit = function (channel, params, callback) {
 
   // Callback magic
   this.__emit_with_check(channel, params)
-     .then(function () { nextTick(callback.bind(null)); })
-     .catch(function (err) { nextTick(callback.bind(null, err)); });
+    .then(function () { nextTick(callback.bind(null)); })
+    .catch(function (err) { nextTick(callback.bind(null, err)); });
 };
 
 
