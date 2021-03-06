@@ -18,9 +18,6 @@
   "files": [
     "index.js"
   ],
-  "dependencies": {
-    "next-tick": "^1.0.0"
-  },
   "devDependencies": {
     "bluebird": "^3.5.0",
     "co": "^4.6.0",

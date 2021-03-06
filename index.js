@@ -4,9 +4,6 @@
 'use strict'
 
 
-var nextTick = require('next-tick')
-
-
 function _class (obj) { return Object.prototype.toString.call(obj) }
 
 function isString (obj) { return _class(obj) === '[object String]' }
@@ -384,8 +381,10 @@ Wire.prototype.emit = function (channel, params, callback) {
 
   // Callback magic
   this.__emit_with_check(channel, params)
-    .then(function () { nextTick(callback.bind(null)) })
-    .catch(function (err) { nextTick(callback.bind(null, err)) })
+    .then(
+      function () { callback() },
+      function (err) { callback(err) }
+    )
 }
 
 

@@ -2,6 +2,7 @@
 ------------------
 
 - Drop generators support by default.
+- Drop `next-tick` use in `.emit()` callback.
 - Deps bump.
 
 
