@@ -1,4 +1,4 @@
-4.0.0 / WIP
+4.0.0 / 2021-03-06
 ------------------
 
 - Drop generators support by default.
